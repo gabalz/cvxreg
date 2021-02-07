@@ -85,7 +85,7 @@ nosetests --with-doctests --doctest-test
 ```
 
 ---------------------------------------------------------------------------------------------------
-# STARTING JUPYTER NOTEBOOK
+# EXPERIMENTS
 
 There is a notebook which provides basic experimenting on synthetic convex regression problems.
 
