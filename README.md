@@ -7,43 +7,43 @@ This Python library implements convex regression algorithms of various papers.
 **Convex Nonparametric Least-Squares (CNLS)** \
 `y2004_cnls/cnls.py`
 
-Convex Optimization, Section 6.5.5, \
-*Stephen Boyd, Lieven Vandenberghe,* \
-Cambridge University Press, 2004
+> Convex Optimization, Section 6.5.5, \
+> *Stephen Boyd, Lieven Vandenberghe,* \
+> Cambridge University Press, 2004
 ([book](https://web.stanford.edu/~boyd/cvxbook/)).
 
 **Least-Squares Partition Algorithm (LSPA)** \
 `y2009_lspa/lspa.py`
 
-Convex piecewise-linear fitting, \
-*Alessandro Magnani, Stephen P. Boyd,* \
-Optimization and Engineering, vol.10, 2009
+> Convex piecewise-linear fitting, \
+> *Alessandro Magnani, Stephen P. Boyd,* \
+> Optimization and Engineering, vol.10, 2009
 ([paper](https://web.stanford.edu/~boyd/papers/pdf/cvx_pwl_fit.pdf)).
 
 **Convex Adaptive Partitioning (CAP), and FastCAP** \
 `y2013_cap/cap.py`
 
-Multivariate Convex Regression with Adaptive Partitioning, \
-*Lauren A. Hannah, David B. Dunson,* \
-JMLR, vol.14, 2013
+> Multivariate Convex Regression with Adaptive Partitioning, \
+> *Lauren A. Hannah, David B. Dunson,* \
+> JMLR, vol.14, 2013
 ([paper](https://www.jmlr.org/papers/v14/hannah13a.html),
 [MATLAB code](https://github.com/laurenahannah/convex-function))
 
 **Partitioning Convex Nonparametric Least-Squares (PCNLS) with uniformly random Voronoi partition** \
 `y2015_pcnls/pcnls_voronoi.py`
 
-Near-optimal max-affine estimators for convex regression, \
-*Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
-AISTATS, 2015
+> Near-optimal max-affine estimators for convex regression, \
+> *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
+> AISTATS, 2015
 ([paper](http://jmlr.org/proceedings/papers/v38/balazs15.html),
 [MATLAB code](http://proceedings.mlr.press/v38/balazs15-supp.zip)).
 
 **Adaptive Max-Affine Partitioning (AMAP)** \
 `y2016_amap/amap.py`
 
-Convex regression: theory, practice, and applications, Section 6.2.3, \
-*Gabor Balazs,* \
-PhD Thesis, University of Alberta, 2016
+> Convex regression: theory, practice, and applications, Section 6.2.3, \
+> *Gabor Balazs,* \
+> PhD Thesis, University of Alberta, 2016
 ([thesis](https://era.library.ualberta.ca/files/c7d278t254/Balazs_Gabor_201609_PhD.pdf),
 [MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
 
