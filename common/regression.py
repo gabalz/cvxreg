@@ -28,13 +28,14 @@ def max_affine_predict(weights, X, extend_X1=True):
     return np.max(X.dot(weights.T), axis=1)
 
 
-def max_affine_fit_partition(partition, X, y, extend_X1=True):
+def max_affine_fit_partition(partition, X, y, extend_X1=True, rcond=None):
     """OLS fitting each cell within a partition.
 
     :param partition: Partition object of which cells to be fitted by OLS
     :param X: data matrix (each row is a sample)
     :param y: target vector
     :param extend_X1: whether or not to extend the data with leading 1s
+    :param rcond: cut-off ratio for small singular values (see np.linalg.lstsq)
     :return: weight matrix (each row represents an OLS fit)
 
     >>> from common.distance import squared_distance
@@ -58,7 +59,7 @@ def max_affine_fit_partition(partition, X, y, extend_X1=True):
         X = np.insert(X, 0, 1.0, axis=1)
     weights = np.empty((partition.ncells, X.shape[1]))
     for i, cell in enumerate(partition.cells):
-        weights[i, :] = np.linalg.lstsq(X[cell, :], y[cell], rcond=-1)[0]
+        weights[i, :] = np.linalg.lstsq(X[cell, :], y[cell], rcond=rcond)[0]
     return weights
 
 

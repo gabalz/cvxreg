@@ -1,5 +1,6 @@
 import numpy as np
 
+from scipy.spatial import distance
 from common.distance import squared_distance
 
 
@@ -27,17 +28,14 @@ def find_min_dist_centers(data, partition, dist=squared_distance):
     [0. 1.]
     [0.]
     """
+    if dist == squared_distance:
+        dist = 'sqeuclidean'
+
     center_idxs = []
     for k in range(partition.ncells):
         cell = partition.cells[k]
-        mini = -1
-        mind = None
-        for i in range(len(cell)):
-            d = sum(dist(data[cell, :], data[cell[i], :]))
-            if mind is None or mind > d:
-                mind = d
-                mini = cell[i]
-        center_idxs.append(mini)
+        dists = distance.cdist(data[cell, :], data[cell, :], dist)
+        center_idxs.append(cell[np.argmin(np.sum(dists, axis=1))])
     return tuple(center_idxs)
 
 
@@ -88,11 +86,17 @@ def voronoi_partition(centers, data, dist=squared_distance):
     [[0, 2], [1, 3, 4]]
     """
     npoints = data.shape[0]
-    cells = {}
-    for point_idx in range(npoints):
-        center_idx = np.argmin(dist(centers, data[point_idx, :]))
-        cells.setdefault(center_idx, []).append(point_idx)
-    cells = tuple(cells.values())
+    ncells = centers.shape[0]
+    cells = []
+    cell_idx = np.zeros(npoints, dtype=int)
+    cell_center_dist = dist(data, centers[0, :])
+    for k in range(1, ncells):
+        center = centers[k, :]
+        center_dist = dist(data, center)
+        cell_idx = np.where(cell_center_dist <= center_dist, cell_idx, k)
+        np.minimum(cell_center_dist, center_dist, out=cell_center_dist)
+    cells = [np.where(cell_idx == k)[0] for k in range(ncells)]
+    cells = tuple([list(cell) for cell in cells if len(cell) > 0])
     return Partition(npoints=npoints, ncells=len(cells), cells=cells)
 
 
