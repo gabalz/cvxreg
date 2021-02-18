@@ -53,8 +53,8 @@ This Python library implements convex regression algorithms of various papers.
 The installation of a minimal virtual environment to show the requirements of running the code. The library has been tested with Python 3.5.2 and the shown package versions, but it should work with newer Python and packages as well.
 
 ```bash
-python -m venv .../pyenv # creating empty virtual environment
-source .../pyenv/bin/activate # activating the virtual environment
+python -m venv .../pyenv  # creating empty virtual environment
+source .../pyenv/bin/activate  # activating the virtual environment
 
 pip install --upgrade pip  # == 20.3.3
 pip install --upgrade setuptools  # == 41.2.0
@@ -92,7 +92,7 @@ There is a notebook which provides basic experimenting on synthetic convex regre
 
 To run the Jupyter notebook:
 ```bash
-source .../pyenv/bin/activate # if not done yet
+source .../pyenv/bin/activate  # if not done yet
 cd .../cvxreg  # go to the root directory of this project
 jupyter-notebook  # other options: --ip <ip|hostname> --port <port> --no-browser
 ```
