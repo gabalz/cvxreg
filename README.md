@@ -81,7 +81,7 @@ All the doctests can be run by using the nose package:
 ```bash
 source .../pyenv/bin/activate  # if not done yet
 cd .../cvxreg  # go to the root directory of this project
-export PYTHONPATH=.
+export PYTHONPATH=".:${PYTHONPATH}"
 nosetests --with-doctests --doctest-test
 ```
 
