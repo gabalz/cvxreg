@@ -35,18 +35,18 @@ def find_min_dist_centers(data, partition, dist=squared_distance):
     for k in range(partition.ncells):
         cell = partition.cells[k]
         dists = distance.cdist(data[cell, :], data[cell, :], dist)
-        center_idxs.append(cell[np.argmin(np.sum(dists, axis=1))])
+        center_idxs.append(cell[np.argmin(np.max(dists, axis=1))])
     return tuple(center_idxs)
 
 
-def max_cell_radius(data, partition, center_idxs=None, dist=squared_distance):
-    """Calculate the maximum cell radius within a partition.
+def cell_radiuses(data, partition, center_idxs=None, dist=squared_distance):
+    """Calculate all cell radiuses within a partition.
 
     :param data: data matrix (each row is a sample)
     :param partition: partition represented by sample indices (Partition object)
     :param center_idxs: center indices (optional, computed if not provided)
     :param dist: distance function
-    :return: maximum cell radius
+    :return: cell radiuses
 
     >>> X = np.array(
     ...     [[1., 1.], [-1., 1.], [0., 1.],
@@ -54,13 +54,13 @@ def max_cell_radius(data, partition, center_idxs=None, dist=squared_distance):
     ...      [-1., -1.], [-2., -1], [0., 1.]],
     ... )
     >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
-    >>> max_cell_radius(X, p)
-    2.5
+    >>> cell_radiuses(X, p)
+    (2.5, 1.0, 0.0)
     """
     if center_idxs is None:
         center_idxs = find_min_dist_centers(data, partition, dist)
     assert partition.ncells == len(center_idxs)
-    return max([
+    return tuple([
         max(dist(data[cell, :], data[center_idx, :]))
         for cell, center_idx in zip(partition.cells, center_idxs)
     ])
