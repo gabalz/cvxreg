@@ -86,6 +86,6 @@ PYTHONPATH=. nosetests --with-doctests --doctest-test
 ---------------------------------------------------------------------------------------------------
 # EXPERIMENTS
 
-There is a Jupyter notebook `ipynb/cvxreg.ipynb`
+There is a Jupyter notebook `ipynb/cvxreg_synt.ipynb`
 which provides basic experimenting on synthetic convex regression problems.
 
