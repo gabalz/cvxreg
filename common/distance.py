@@ -13,6 +13,7 @@ def squared_distance(left, right, axis=1):
     >>> squared_distance(mat, 0)
     array([14, 29,  5])
     """
-    if len(left.shape) == 1:
-        return np.sum(np.square(left - right))
-    return np.sum(np.square(left - right), axis=axis)
+    diff = np.square(left - right)
+    if len(diff.shape) == 1:
+        return np.sum(diff)
+    return np.sum(diff, axis=axis)

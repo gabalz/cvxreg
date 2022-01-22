@@ -30,13 +30,15 @@ class QPResult(object):
 
 
 def qp_solve(
-    H, g, A, b,
+    H, g, A, ub, lb=None,
     x0=None, y0=None,
     maxiter=10000,
     backend=QP_BACKEND__DEFAULT,
     verbose=True,
 ):
-    """Solving quadratic programming (QP) problem of the form: 0.5*x'*H*x + g'*x, s.t. A*x <= b.
+    """Solving quadratic programming (QP) problem of the form: 
+
+        0.5*x'*H*x + g'*x, s.t. lb <= A*x <= ub.
 
     :param H: objective symmetric positive semi-definite matrix
     :param g: objective vector
@@ -86,7 +88,7 @@ def qp_solve(
 
     >>> x0 = np.array([0.2, 0.5])
     >>> y0 = np.array([2.8, 0.0, 0.0, 0.0, 0.0, 0.3])
-    >>> r3 = qp_solve(H2, g2, A2, b2, x0, y0, backend=backend, verbose=False)
+    >>> r3 = qp_solve(H2, g2, A2, b2, x0=x0, y0=y0, backend=backend, verbose=False)
     >>> np.round(r3.primal_soln, decimals=2)
     array([0.3, 0.7])
     >>> np.round(r3.dual_soln, decimals=1)
@@ -95,7 +97,10 @@ def qp_solve(
     H = H.astype(float, copy=False)
     g = g.astype(float, copy=False)
     A = A.astype(float, copy=False)
-    b = b.astype(float, copy=False)
+    if lb is not None:
+        lb = lb.astype(float, copy=False)
+    if ub is not None:
+        ub = ub.astype(float, copy=False)
     x = x0
     stat = None
     if backend == QP_BACKEND__OSQP:
@@ -103,8 +108,10 @@ def qp_solve(
         m = osqp.OSQP()
         H = sparse.csc_matrix(H)
         A = sparse.csc_matrix(A)
+        if lb is None:
+            lb = -np.inf*np.ones(ub.shape)
         m.setup(
-            P=H, q=g, A=A, l=-np.inf*np.ones(b.shape), u=b,
+            P=H, q=g, A=A, l=lb, u=ub,
             max_iter=maxiter, verbose=verbose, polish=True,
         )
         if x is not None:

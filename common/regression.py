@@ -3,6 +3,41 @@ import numpy as np
 from common.estimator import EstimatorModel
 
 
+def _prepare_prediction(weights, X, extend_X1):
+    if isinstance(weights, EstimatorModel):
+        weights = weights.weights
+    if extend_X1:
+        X = np.insert(X, 0, 1.0, axis=1)
+    return weights, X
+
+
+def partition_predict(partition, weights, X, extend_X1=True):
+    """Prediction by a non-continuous piecewise-linear model.
+
+    :param partition: Partition object
+    :param weights: weights for each cell (each row is a hyperplane), or EstimatorModel having the weights
+    :param X: data matrix (each row is a sample)
+    :param extend_X1: whether or not to extend the data with leading 1s
+    :return: predicted vector (one value for each sample)
+
+    >>> from common.partition import Partition
+
+    >>> p = Partition(npoints=5, ncells=2, cells=(np.array([0, 3, 4]), np.array([1, 2])))
+    >>> X = np.array([[1.1, 1.1], [-1.2, 1.2], [-1.3, -1.3], [0.4, 0.4], [1.5, -1.5]])
+
+    >>> W = np.array([[1.0, 2.0, 3.0], [-1., -2., -3.]])
+    >>> partition_predict(p, W, X)
+    array([ 6.5, -2.2,  5.5,  3. , -0.5])
+    """
+    assert partition.npoints == X.shape[0]
+    assert partition.ncells == weights.shape[0]
+    weights, X = _prepare_prediction(weights, X, extend_X1)
+    yhat = np.zeros(X.shape[0])
+    for i, cell in enumerate(partition.cells):
+        yhat[cell] = X[cell, :].dot(weights[i, :])
+    return yhat
+
+
 def max_affine_predict(weights, X, extend_X1=True):
     """Prediction by a max-affine model.
 
@@ -21,10 +56,7 @@ def max_affine_predict(weights, X, extend_X1=True):
     >>> max_affine_predict(W, X)
     array([6.5, 2.2, 5.5, 3. , 0.5])
     """
-    if isinstance(weights, EstimatorModel):
-        weights = weights.weights
-    if extend_X1:
-        X = np.insert(X, 0, 1.0, axis=1)
+    weights, X = _prepare_prediction(weights, X, extend_X1)
     return np.max(X.dot(weights.T), axis=1)
 
 

@@ -27,7 +27,7 @@ class PCNLSEstimatorModel(EstimatorModel):
 
 def pcnls_train(
     X, y, partition,
-    regularizer=0.0, L=None,
+    regularizer=0.0, use_L=True, scale_L=1.0, ln_L=False, L=None, L_regularizer=None,
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
 ):
@@ -37,7 +37,9 @@ def pcnls_train(
     :param y: target vector
     :param partition: partition to be induced by the trained max-affine function
     :param regularizer: ridge regularization parameter on the gradients
+    :param use_L: use L if provided
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
+    :param L_regularizer: soft constraint scaler on Lipschitz constant
     :param backend: quadratic programming solver
     :param verbose: whether to print verbose output
     :param init_weights: warm starting weights for QP
@@ -55,10 +57,24 @@ def pcnls_train(
             partition.npoints, partition.ncells, X.shape[1], L, regularizer,
         ))
 
+    if not use_L:
+        L = None
+    elif ln_L:
+        L = np.log(n)
+
+    if isinstance(regularizer, str):
+        regularizer = eval(regularizer)
+    if isinstance(L_regularizer, str):
+        L_regularizer = eval(L_regularizer)
+    if isinstance(scale_L, str):
+        scale_L = eval(scale_L)
+    if L is not None and scale_L is not None:
+        L *= scale_L
+
     start = timer()
     H, g, A, b, cell_idx = pcnls_qp_data(
         X, y, partition,
-        regularizer=regularizer, L=L,
+        regularizer=regularizer, L=L, L_regularizer=L_regularizer,
     )
     if init_weights is not None:
         init_weights = init_weights.ravel()
@@ -75,11 +91,14 @@ def pcnls_train(
     max_viol = max(0.0, np.max(A.dot(weights) - b))
     obj_val = 0.5*weights.dot(H.dot(weights)) + g.dot(weights)
 
+    if L_regularizer is not None:
+        L_est = weights[-1]
+        weights = weights[:-1]
     weights = np.reshape(weights, (partition.ncells, (1+X.shape[1])))
     yhat = max_affine_predict(weights, X)
     proj_obj_val = 0.5 * (np.sum(np.square(y - yhat)) - y.dot(y))
 
-    return PCNLSEstimatorModel(
+    model = PCNLSEstimatorModel(
         weights=weights,
         nqpiter=nqpiter,
         seconds=(timer() - start),
@@ -89,9 +108,12 @@ def pcnls_train(
         regularizer=regularizer,
         dual_vars=dual_vars,
     )
+    if L_regularizer is not None:
+        model.L_est = L_est
+    return model
 
 
-def _add_L_to_Ab(L, K, d, A_data, A_rows, A_cols, row_idx):
+def _add_L_to_Ab(L, L_regularizer, K, d, A_data, A_rows, A_cols, row_idx):
     """Adding the Lipschitz constraints to the end of the constraint parameters A and b."""
     d1 = d + 1
     if L is not None:
@@ -103,6 +125,16 @@ def _add_L_to_Ab(L, K, d, A_data, A_rows, A_cols, row_idx):
                 row_idx += 2
                 col = col0 + l
                 A_cols += [col, col]
+    elif L_regularizer is not None:
+        Kd1 = K*d1
+        for k in range(K):
+            col0 = k * d1 + 1
+            for l in range(d):
+                A_data += [1.0, -1.0, -1.0, -1.0]
+                A_rows += [row_idx, row_idx, row_idx+1, row_idx+1]
+                row_idx += 2
+                col = col0 + l
+                A_cols += [col, Kd1, col, Kd1]
 
     b = np.zeros(row_idx)
     if L is not None:
@@ -113,7 +145,7 @@ def _add_L_to_Ab(L, K, d, A_data, A_rows, A_cols, row_idx):
 
 def pcnls_qp_data(
     X, y, partition,
-    regularizer=0.0, L=None,
+    regularizer=0.0, L=None, L_regularizer=None,
     backend=QP_BACKEND__DEFAULT,
 ):
     """Constructing max-affine convex regression matrices for quadratic programming (QP).
@@ -124,6 +156,7 @@ def pcnls_qp_data(
     :param partition: induced partition by the considered max-affine functions
     :param regularizer: ridge regression regularizer
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
+    :param L_regularizer: scaler for soft L regularization
     :param backend: quadratic programming solver
     :return: QP parameters H, g, A, b, and the constraint row index for each cell
 
@@ -233,6 +266,53 @@ def pcnls_qp_data(
     array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
            0., 0., 0., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5., 5.,
            5., 5., 5., 5., 5., 5.])
+
+    >>> H, g, A, b, cell_idx = pcnls_qp_data(X, y, p, L_regularizer=7.0)
+    >>> A.toarray()[:33, :9]
+    array([[-1. , -1.1, -1.1,  1. ,  1.1,  1.1,  0. ,  0. ,  0. ],
+           [-1. , -1.1, -1.1,  0. ,  0. ,  0. ,  1. ,  1.1,  1.1],
+           [-1. , -1.1, -1.1,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [-1. , -1.1, -1.1,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 1. , -1.2,  1.2, -1. ,  1.2, -1.2,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. , -1. ,  1.2, -1.2,  1. , -1.2,  1.2],
+           [ 0. ,  0. ,  0. , -1. ,  1.2, -1.2,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. , -1. ,  1.2, -1.2,  0. ,  0. ,  0. ],
+           [ 1. , -1.3, -1.3,  0. ,  0. ,  0. , -1. ,  1.3,  1.3],
+           [ 0. ,  0. ,  0. ,  1. , -1.3, -1.3, -1. ,  1.3,  1.3],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. , -1. ,  1.3,  1.3],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. , -1. ,  1.3,  1.3],
+           [ 1. ,  0.4,  0.4,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  1. ,  0.4,  0.4,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  1. ,  0.4,  0.4],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 1. ,  1.5, -1.5,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  1. ,  1.5, -1.5,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  1. ,  1.5, -1.5],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  1. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. , -1. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  1. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. , -1. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  1. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. , -1. ,  0. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  1. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. , -1. ,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  1. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. , -1. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  1. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. , -1. ],
+           [ 0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ]])
+    >>> A.toarray()[-5:, :]
+    array([[ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., -1.,  0.,
+             0.,  0., -1.],
+           [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+             1.,  0., -1.],
+           [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+            -1.,  0., -1.],
+           [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+             0.,  1., -1.],
+           [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+             0., -1., -1.]])
     """
     n, d = X.shape
     K = partition.ncells
@@ -242,11 +322,12 @@ def pcnls_qp_data(
     if y.shape == (n, 1):
         y = y[:, 0]
     assert y.shape == (n,), 'Invalid y.shape: {}'.format(y.shape)
+    assert L is None or L_regularizer is None
 
     X = np.insert(X, 0, 1.0, axis=1)
     d1 = d+1  # bias extended input dimension
     assert X.shape == (n, d1)
-    nvars = K*d1  # number of variables of QP
+    nvars = K*d1 + int(L_regularizer is not None)  # number of variables of QP
 
     regmat = None
     if regularizer > 0.0:
@@ -282,8 +363,12 @@ def pcnls_qp_data(
             A_rows += rows
             A_cols += list(np.kron(col_k + col_j, np.ones((cell_size, 1))).flatten())
     A_data, A_rows, A_cols, row_idx, b = _add_L_to_Ab(
-        L, K, d, A_data, A_rows, A_cols, row_idx,
+        L, L_regularizer, K, d, A_data, A_rows, A_cols, row_idx,
     )
+
+    if L_regularizer is not None:
+        H_mats.append(np.array([L_regularizer]))
+        g_mats.append(np.array([0.0]))
 
     H = block_diag(H_mats, format='csc')
     H = (H + H.transpose()) / 2.  # numerical stabilization of symmetry

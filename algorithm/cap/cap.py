@@ -85,7 +85,7 @@ def _cap_gcv_err(XW, y, d, P):
 
 def _cap_jitter_fix(xarray, xmin, xmax, jitter_tol):
     if xmax - xmin < jitter_tol:
-        xarray += jitter_tol * np.random.randn(xarray.shape)
+        xarray += jitter_tol * np.random.randn(*xarray.shape)
         xmin = min(xarray)
         xmax = max(xarray)
     return xarray, xmin, xmax

@@ -5,7 +5,7 @@ from functools import partial
 from common.estimator import Estimator
 from common.partition import rand_voronoi_partition
 from common.regression import max_affine_predict
-from y2015_pcnls.pcnls import pcnls_train
+from algorithm.pcnls.pcnls import pcnls_train
 
 
 def _pcnls_voronoi_train(X, y, **kwargs):
@@ -37,15 +37,15 @@ class PCNLSVoronoiEstimator(Estimator):
     >>> np.round(np.sum(np.square(ols_yhat_test - y_test)) / len(y_test), decimals=4)  # OLS out-of-sample L2-error
     6.2752
 
-    >>> pcnlsv = PCNLSVoronoiEstimator()
-    >>> model = pcnlsv.train(X, y)
-    >>> model.weights.shape
+    >>> pcnlsv1 = PCNLSVoronoiEstimator()
+    >>> model1 = pcnlsv1.train(X, y)
+    >>> model1.weights.shape
     (6, 3)
-    >>> yhat = pcnlsv.predict(model, X)
-    >>> np.round(np.sum(np.square(yhat - y)) / len(y), decimals=4)  # in-sample L2-risk
+    >>> yhat1 = pcnlsv1.predict(model1, X)
+    >>> np.round(np.sum(np.square(yhat1 - y)) / len(y), decimals=4)  # in-sample L2-risk
     0.3661
-    >>> yhat_test = pcnlsv.predict(model, X_test)
-    >>> np.round(np.sum(np.square(yhat_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
+    >>> yhat1_test = pcnlsv1.predict(model1, X_test)
+    >>> np.round(np.sum(np.square(yhat1_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
     0.3686
     """
     def __init__(self, train_args={}, predict_args={}):
