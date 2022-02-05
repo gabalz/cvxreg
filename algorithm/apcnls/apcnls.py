@@ -745,7 +745,7 @@ def apcnls_qp_data(
         L, L_regularizer, V0, K, d, A_data, A_rows, A_cols, row_idx,
     )
 
-    H_mats.append(np.array([n*V_regularizer]))
+    H_mats.append(np.array([[n*V_regularizer]]))
     g_mats.append(np.array([0.0]))
     if L_regularizer is not None:
         H_mats.append(np.array([n*L_regularizer]))
