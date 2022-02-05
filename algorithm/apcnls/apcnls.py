@@ -748,7 +748,7 @@ def apcnls_qp_data(
     H_mats.append(np.array([[n*V_regularizer]]))
     g_mats.append(np.array([0.0]))
     if L_regularizer is not None:
-        H_mats.append(np.array([n*L_regularizer]))
+        H_mats.append(np.array([[n*L_regularizer]]))
         g_mats.append(np.array([0.0]))
 
     H = block_diag(H_mats, format='csc')
