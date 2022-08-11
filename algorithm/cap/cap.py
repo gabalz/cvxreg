@@ -85,7 +85,7 @@ def _cap_gcv_err(XW, y, d, P):
 
 def _cap_jitter_fix(xarray, xmin, xmax, jitter_tol):
     if xmax - xmin < jitter_tol:
-        xarray += jitter_tol * np.random.randn(*xarray.shape)
+        xarray = xarray + jitter_tol * np.random.randn(*xarray.shape)
         xmin = min(xarray)
         xmax = max(xarray)
     return xarray, xmin, xmax
@@ -157,12 +157,11 @@ def cap_train(
             if nranddirs <= 0:  # CAP splitting along canonical directions
                 for dim in range(d):
                     Xcelld = Xcell[:, dim]
-
+                    Xcelld, xmin, xmax = _cap_jitter_fix(
+                        Xcelld, np.min(Xcelld), np.max(Xcelld), jitter_tol,
+                    )
                     has_found_valid_knot = False
                     for knot in range(nknots):
-                        Xcelld, xmin, xmax = _cap_jitter_fix(
-                            Xcelld, min(Xcelld), max(Xcelld), jitter_tol,
-                        )
                         b = xmin + (float(knot)/(nknots-1)) * (xmax - xmin)
                         is_valid, cell_le, cell_gt = _cap_split(cell, Xcelld, b, mincellsize)
                         if not is_valid:
@@ -175,7 +174,6 @@ def cap_train(
                              cand_W, cand_XW, best_cand_err,
                              best_cand_W, best_cand_XW, best_cand_P,
                         )
-
                     if not has_found_valid_knot:  # split by the median if nothing else worked
                         b = np.median(Xcelld)
                         is_valid, cell_le, cell_gt = _cap_split(cell, Xcelld, b, mincellsize)
@@ -193,12 +191,11 @@ def cap_train(
                 for iranddir in range(nranddirs):
                     g = G[iranddir, :]
                     Xcellg = Xcell.dot(g)
-
+                    Xcellg, xmin, xmax = _cap_jitter_fix(
+                        Xcellg, np.min(Xcellg), np.max(Xcellg), jitter_tol,
+                    )
                     has_found_valid_knot = False
                     for knot in range(nknots):
-                        Xcelld, xmin, xmax = _cap_jitter_fix(
-                            Xcellg, min(Xcellg), max(Xcellg), jitter_tol,
-                        )
                         b = xmin + (float(knot)/(nknots-1)) * (xmax - xmin)
                         is_valid, cell_le, cell_gt = _cap_split(cell, Xcellg, b, mincellsize)
                         if not is_valid:
@@ -211,7 +208,6 @@ def cap_train(
                              cand_W, cand_XW, best_cand_err,
                              best_cand_W, best_cand_XW, best_cand_P,
                         )
-
                     if not has_found_valid_knot:  # split by the median if nothing else worked
                         b = np.median(Xcellg)
                         is_valid, cell_le, cell_gt = _cap_split(cell, Xcellg, b, mincellsize)

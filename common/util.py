@@ -46,7 +46,7 @@ def rand_direction(n, d):
     array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
     """
     x = np.random.randn(n, d)
-    x /= np.linalg.norm(x, axis=1).reshape((x.shape[0], 1))
+    x /= np.linalg.norm(x, axis=1)[:, np.newaxis]
     return x
 
 

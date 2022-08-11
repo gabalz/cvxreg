@@ -8,8 +8,12 @@ from scipy.sparse import block_diag, coo_matrix
 
 from common.estimator import EstimatorModel, Estimator
 from common.regression import max_affine_predict, partition_predict
-from optim.quadprog import qp_solve, convert_matrix_to_qp_solver_format, QP_BACKEND__DEFAULT
-from algorithm.apcnls.fpc import adaptive_farthest_point_clustering, cell_radiuses, get_data_radius
+from optim.quadprog import (
+    qp_solve, convert_matrix_to_qp_solver_format, QP_BACKEND__DEFAULT,
+)
+from algorithm.apcnls.fpc import (
+    adaptive_farthest_point_clustering, cell_radiuses, get_data_radius,
+)
 
 
 class APCNLSEstimator(Estimator):
@@ -31,28 +35,32 @@ class APCNLSEstimator(Estimator):
     >>> np.round(np.sum(np.square(ols_yhat_test - y_test)) / len(y_test), decimals=4)  # OLS out-of-sample L2-error
     6.2752
 
-    # >>> apcnls1 = APCNLSEstimator()
-    # >>> model1 = apcnls1.train(X, y)  # missing Lipschitz constant
-    # >>> model1.weights.shape
-    # (9, 3)
-    # >>> np.round(model1.V, decimals=4)
-    # 1.5619
-    # >>> model1.V0 is None
-    # True
-    # >>> np.round(model1.train_diff, decimals=4)
-    # 0.3793
-    # >>> np.round(model1.cell_diff_max, decimals=4)
-    # 0.1496
-    # >>> np.round(model1.partition_radius, decimals=4)
-    # 2.0427
-    # >>> np.round(model1.proj_diff_corr, decimals=4)
-    # -0.0954
-    # >>> yhat1 = apcnls1.predict(model1, X)
-    # >>> np.round(np.sum(np.square(yhat1 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    # 0.5441
-    # >>> yhat1_test = apcnls1.predict(model1, X_test)
-    # >>> np.round(np.sum(np.square(yhat1_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    # 0.3576
+    >>> apcnls1 = APCNLSEstimator()
+    >>> model1 = apcnls1.train(X, y)  # missing Lipschitz constant
+    >>> model1.weights.shape
+    (9, 3)
+    >>> np.round(model1.V, decimals=4)
+    0.0384
+    >>> model1.V0 is None
+    True
+    >>> model1.obj_val
+    -925.3174570854741
+    >>> model1.proj_obj_val
+    -927.0106351998556
+    >>> np.round(model1.train_diff, decimals=4)
+    0.0058
+    >>> np.round(model1.cell_diff_max, decimals=4)
+    1.2003
+    >>> np.round(model1.partition_radius, decimals=4)
+    2.0427
+    >>> np.round(model1.proj_diff_corr, decimals=4)
+    -0.0007
+    >>> yhat1 = apcnls1.predict(model1, X)
+    >>> np.round(np.sum(np.square(yhat1 - y)) / len(y), decimals=4)  # in-sample L2-risk
+    0.3683
+    >>> yhat1_test = apcnls1.predict(model1, X_test)
+    >>> np.round(np.sum(np.square(yhat1_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
+    0.4312
 
     >>> apcnls2 = APCNLSEstimator()
     >>> model2 = apcnls2.train(X, y, use_L=True, L=4.5, use_V0=True,
@@ -74,25 +82,25 @@ class APCNLSEstimator(Estimator):
     >>> np.round(np.sum(np.square(yhat2_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
     0.1452
 
-    # >>> apcnls3 = APCNLSEstimator()
-    # >>> model3 = apcnls3.train(X, y, use_L=True, L=4.5, use_V0=False,
-    # ...                        L_regularizer=None, V_regularizer=1.0)  # good Lipschitz constant
-    # >>> model3.weights.shape
-    # (9, 3)
-    # >>> np.round(model3.V, decimals=4)
-    # 1.298
-    # >>> model3.V0 is None
-    # True
-    # >>> np.round(model3.partition_radius, decimals=4)
-    # 2.0427
-    # >>> np.round(model3.proj_diff_corr, decimals=4)
-    # -0.0983
-    # >>> yhat3 = apcnls3.predict(model3, X)
-    # >>> np.round(np.sum(np.square(yhat3 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    # 0.1396
-    # >>> yhat3_test = apcnls3.predict(model3, X_test)
-    # >>> np.round(np.sum(np.square(yhat3_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    # 0.1452
+    >>> apcnls3 = APCNLSEstimator()
+    >>> model3 = apcnls3.train(X, y, use_L=True, L=4.5, use_V0=False,
+    ...                        L_regularizer=None, V_regularizer=1.0)  # good Lipschitz constant
+    >>> model3.weights.shape
+    (9, 3)
+    >>> np.round(model3.V, decimals=4)
+    0.218
+    >>> model3.V0 is None
+    True
+    >>> np.round(model3.partition_radius, decimals=4)
+    2.0427
+    >>> np.round(model3.proj_diff_corr, decimals=4)
+    -0.0117
+    >>> yhat3 = apcnls3.predict(model3, X)
+    >>> np.round(np.sum(np.square(yhat3 - y)) / len(y), decimals=4)  # in-sample L2-risk
+    0.2901
+    >>> yhat3_test = apcnls3.predict(model3, X_test)
+    >>> np.round(np.sum(np.square(yhat3_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
+    0.3243
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
