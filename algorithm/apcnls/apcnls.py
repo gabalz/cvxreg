@@ -22,12 +22,12 @@ class APCNLSEstimator(Estimator):
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
 
-    # L2-error of OLS is bigger than 6.
     >>> def regression_func(X):
     ...     return 1.0 - 2.0*X[:, 0] + X[:, 1]**2
     >>> X = np.random.randn(200, 2)
     >>> y = regression_func(X) + 0.1 * np.random.randn(X.shape[0])
 
+    # L2-error of OLS is bigger than 6.
     >>> X_test = np.random.randn(500, 2)
     >>> y_test = regression_func(X_test)
     >>> ols_model = np.linalg.lstsq(X.T.dot(X), X.T.dot(y), rcond=-1)[0]
@@ -101,6 +101,42 @@ class APCNLSEstimator(Estimator):
     >>> yhat3_test = apcnls3.predict(model3, X_test)
     >>> np.round(np.sum(np.square(yhat3_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
     0.3243
+
+    >>> set_random_seed(17)
+
+    >>> def regression_func(X):
+    ...     return 0.5 * np.sum(np.square(X), axis=1)
+    >>> X = np.random.randn(300, 5)
+    >>> y = regression_func(X) + 0.1 * np.random.randn(X.shape[0])
+
+    # L2-error of OLS is bigger than 9.
+    >>> X_test = np.random.randn(500, 5)
+    >>> y_test = regression_func(X_test)
+    >>> ols_model = np.linalg.lstsq(X.T.dot(X), X.T.dot(y), rcond=-1)[0]
+    >>> ols_yhat_test = np.sum(X_test * ols_model, axis=1)  # np.dot is not deterministic
+    >>> np.round(np.sum(np.square(ols_yhat_test - y_test)) / len(y_test), decimals=4)  # OLS out-of-sample L2-error
+    9.2304
+
+    >>> apcnls4 = APCNLSEstimator()
+    >>> model4 = apcnls4.train(X, y)  # good Lipschitz constant
+    >>> model4.weights.shape
+    (25, 6)
+    >>> np.round(model4.obj_val, decimals=1)
+    -1265.7
+    >>> np.round(model4.proj_obj_val, decimals=1)
+    -1265.7
+    >>> np.round(model4.V, decimals=4)
+    0.0017
+    >>> np.round(model4.partition_radius, decimals=4)
+    5.8376
+    >>> np.round(model4.train_diff, decimals=4)
+    0.0002
+    >>> yhat4 = apcnls4.predict(model4, X)
+    >>> np.round(np.sum(np.square(yhat4 - y)) / len(y), decimals=4)  # in-sample L2-risk
+    0.2199
+    >>> yhat4_test = apcnls4.predict(model4, X_test)
+    >>> np.round(np.sum(np.square(yhat4_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
+    0.5371
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
@@ -142,7 +178,7 @@ class APCNLSEstimatorModel(EstimatorModel):
 
 def apcnls_train(
     X, y,
-    regularizer=0.0, use_L=False, ln_L=False, L=None, L_regularizer=None,
+    regularizer=0.0, use_L=False, L=None, L_regularizer=None,
     use_V0=False, V_regularizer='AUTO',
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
@@ -171,14 +207,14 @@ def apcnls_train(
         y = y.ravel()
 
     if verbose > 0:
-        print('Training APCNLS, n: {}, K: {}, d: {}, L: {}, regularizer: {}'.format(
-            partition.npoints, partition.ncells, X.shape[1], L, regularizer,
+        print('Training APCNLS, n: {}, d: {}, L: {}, regularizer: {}'.format(
+            X.shape[0], X.shape[1], L, regularizer,
         ))
 
     if not use_L:
         L = None
-    elif ln_L:
-        L = np.log(n)
+    elif isinstance(L, str):
+        L = eval(L)
 
     if isinstance(regularizer, str) and regularizer not in ('AUTO', 'DEFAULT'):
         regularizer = eval(regularizer)
