@@ -52,7 +52,8 @@ This Python library implements convex regression algorithms of various papers.
 
 > Adaptively Partitioning Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs,* \
-> AISTATS, 2022.
+> AISTATS, 2022
+([paper](https://proceedings.mlr.press/v151/balazs22a.html)).
 
 ----------------------------------------------------------------------------------------------------
 # PYTHON ENVIRONMENT
