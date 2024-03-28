@@ -74,9 +74,8 @@ pip install scipy
 pip install joblib
 pip install osqp
 
-# Optional:
+# Jupyter notebook (Optional):
 
-pip install nose
 pip install pandas
 pip install widgetsnbextension
 pip install jupyter
@@ -91,8 +90,9 @@ For examples, see the doctests in the files mentioned in the ALGORITHMS section 
 All the doctests can be run by using the nose package:
 ```bash
 source .../pyenv/bin/activate  # if not done yet
+pip install pytest
 cd .../cvxreg  # go to the root directory of this project
-PYTHONPATH=. nosetests --with-doctests --doctest-test
+PYTHONPATH=. pytest --doctest-modules
 ```
 
 ---------------------------------------------------------------------------------------------------
