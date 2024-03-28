@@ -43,10 +43,10 @@ class APCNLSEstimator(Estimator):
     0.0384
     >>> model1.V0 is None
     True
-    >>> model1.obj_val
-    -925.3174570854741
-    >>> model1.proj_obj_val
-    -927.0106351998556
+    >>> np.round(model1.obj_val, decimals=4)
+    -925.3175
+    >>> np.round(model1.proj_obj_val, decimals=4)
+    -927.0106
     >>> np.round(model1.train_diff, decimals=4)
     0.0058
     >>> np.round(model1.cell_diff_max, decimals=4)

@@ -67,23 +67,20 @@ python -m venv .../pyenv  # creating empty virtual environment
 source .../pyenv/bin/activate  # activating the virtual environment
 
 pip install --upgrade pip
-pip -f requirements.txt
-
-	OR
-
-pip install --upgrade pip
 pip install --upgrade setuptools
 
-pip install nose
 pip install numpy
 pip install scipy
+pip install joblib
 pip install osqp
 
+# Optional:
+
+pip install nose
+pip install pandas
 pip install widgetsnbextension
 pip install jupyter
-pip install joblib
 pip install matplotlib
-pip install pandas
 ```
 
 ---------------------------------------------------------------------------------------------------

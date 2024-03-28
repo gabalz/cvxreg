@@ -39,4 +39,4 @@ jobs:
     - name: Test with pytest
       run: |
         #pytest
-        PYTHONPATH=. nosetests --with-doctests --doctest-test
+	PYTHONPATH=. nosetests --with-doctest --doctest-test

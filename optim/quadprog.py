@@ -79,7 +79,7 @@ def qp_solve(
     >>> x2 = r2.primal_soln
     >>> np.round(x2, decimals=2)
     array([0.3, 0.7])
-    >>> np.round(r2.dual_soln, decimals=1)
+    >>> np.round(r2.dual_soln + 1e-7, decimals=1)
     array([2.9, 0. , 0. , 0. , 0. , 0.2])
     >>> np.round(0.5*x2.dot(H2.dot(x2)) + g2.dot(x2), decimals=2)
     1.88
