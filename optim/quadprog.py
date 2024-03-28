@@ -120,7 +120,7 @@ def qp_solve(
         if verbose:
             print('status({}): {}'.format(result.info.status_val, result.info.status))
             if result.x is not None:
-                print('max(A*x-b): {}'.format((A.dot(result.x)-b).max()))
+                print('max(A*x-b): {}'.format((A.dot(result.x)-ub).max()))
         assert result.info.status_val in (-2, 1, 2), \
             'status ({}): {}'.format(result.info.status_val, result.info.status)
         primal_soln = result.x
