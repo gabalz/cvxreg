@@ -1,4 +1,4 @@
-[![Python package](https://github.com/gabalz/cvxreg/actions/workflows/python-package.yml/badge.svg)](https://github.com/gabalz/cvxreg/actions/workflows/python-package.yml)
+[![Build](https://github.com/gabalz/cvxreg/actions/workflows/python-package.yml/badge.svg)](https://github.com/gabalz/cvxreg/actions/workflows/python-package.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This Python library implements convex regression algorithms of various papers.
