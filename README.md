@@ -75,7 +75,6 @@ pip install joblib
 pip install osqp
 
 # Jupyter notebook (Optional):
-
 pip install pandas
 pip install widgetsnbextension
 pip install jupyter
