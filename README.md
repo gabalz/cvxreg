@@ -63,22 +63,17 @@ This Python library implements convex regression algorithms of various papers.
 The installation of a minimal virtual environment to show the requirements of running the code.
 
 ```bash
-python -m venv .../pyenv  # creating empty virtual environment
+python3 -m venv .../pyenv  # creating empty virtual environment
 source .../pyenv/bin/activate  # activating the virtual environment
 
 pip install --upgrade pip
 pip install --upgrade setuptools
 
-pip install numpy
-pip install scipy
-pip install joblib
-pip install osqp
+pip install numpy scipy osqp
 
 # Jupyter notebook (Optional):
-pip install pandas
-pip install widgetsnbextension
-pip install jupyter
-pip install matplotlib
+pip install joblib pandas 
+pip install widgetsnbextension jupyter matplotlib
 ```
 
 ---------------------------------------------------------------------------------------------------
