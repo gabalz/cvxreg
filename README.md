@@ -1,3 +1,4 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This Python library implements convex regression algorithms of various papers.
 
@@ -63,6 +64,11 @@ The installation of a minimal virtual environment to show the requirements of ru
 ```bash
 python -m venv .../pyenv  # creating empty virtual environment
 source .../pyenv/bin/activate  # activating the virtual environment
+
+pip install --upgrade pip
+pip -f requirements.txt
+
+	OR
 
 pip install --upgrade pip
 pip install --upgrade setuptools
