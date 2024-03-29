@@ -3,19 +3,34 @@ import numpy as np
 from common.estimator import EstimatorModel
 
 
-def _prepare_prediction(weights, X, extend_X1):
-    if isinstance(weights, EstimatorModel):
-        weights = weights.weights
+def _prepare_prediction(model, X, extend_X1):
+    if isinstance(model, EstimatorModel):
+        weights = model.weights
+        if model.xmean is not None:
+            X = X - model.xmean
+        if model.xscale is not None:
+            X = X / model.xscale
+    else:
+        weights = model
     if extend_X1:
         X = np.insert(X, 0, 1.0, axis=1)
     return weights, X
 
 
-def partition_predict(partition, weights, X, extend_X1=True):
+def _postprocess_prediction(model, yhat):
+    if isinstance(model, EstimatorModel):
+        if model.yscale is not None:
+            yhat *= model.yscale
+        if model.ymean is not None:
+            yhat += model.ymean
+    return yhat
+
+
+def partition_predict(partition, model, X, extend_X1=True):
     """Prediction by a non-continuous piecewise-linear model.
 
     :param partition: Partition object
-    :param weights: weights for each cell (each row is a hyperplane), or EstimatorModel having the weights
+    :param model: weights for each cell (each row is a hyperplane), or EstimatorModel having the weights
     :param X: data matrix (each row is a sample)
     :param extend_X1: whether or not to extend the data with leading 1s
     :return: predicted vector (one value for each sample)
@@ -30,18 +45,18 @@ def partition_predict(partition, weights, X, extend_X1=True):
     array([ 6.5, -2.2,  5.5,  3. , -0.5])
     """
     assert partition.npoints == X.shape[0]
+    weights, X = _prepare_prediction(model, X, extend_X1)
     assert partition.ncells == weights.shape[0]
-    weights, X = _prepare_prediction(weights, X, extend_X1)
     yhat = np.zeros(X.shape[0])
     for i, cell in enumerate(partition.cells):
         yhat[cell] = X[cell, :].dot(weights[i, :])
     return yhat
 
 
-def max_affine_predict(weights, X, extend_X1=True):
+def max_affine_predict(model, X, extend_X1=True):
     """Prediction by a max-affine model.
 
-    :param weights: max-affine weights (each row is a hyperplane), or EstimatorModel having the weights
+    :param model: max-affine weights (each row is a hyperplane), or EstimatorModel having the weights
     :param X: data matrix (each row is a sample)
     :param extend_X1: whether or not to extend the data with leading 1s
     :return: predicted vector (one value for each sample)
@@ -56,8 +71,9 @@ def max_affine_predict(weights, X, extend_X1=True):
     >>> max_affine_predict(W, X)
     array([6.5, 2.2, 5.5, 3. , 0.5])
     """
-    weights, X = _prepare_prediction(weights, X, extend_X1)
-    return np.max(X.dot(weights.T), axis=1)
+    weights, X = _prepare_prediction(model, X, extend_X1)
+    yhat = np.max(X.dot(weights.T), axis=1)
+    return _postprocess_prediction(model, yhat)
 
 
 def max_affine_fit_partition(partition, X, y, extend_X1=True, rcond=None):

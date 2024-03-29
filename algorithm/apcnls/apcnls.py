@@ -153,8 +153,9 @@ class APCNLSEstimatorModel(EstimatorModel):
         cell_diff_min, cell_diff_max, cell_diff_mean, cell_diff_median, cell_diff_std,
         nqpiter, afpc_seconds, qp_seconds,
         obj_val, proj_obj_val, max_viol, regularizer, dual_vars,
+        xmean, xscale, yscale, ymean,
     ):
-        EstimatorModel.__init__(self, weights)
+        EstimatorModel.__init__(self, weights, xmean, xscale, yscale, ymean)
         self.V = V
         self.V0 = V0
         self.L_est = L_est
@@ -178,7 +179,9 @@ class APCNLSEstimatorModel(EstimatorModel):
 
 def apcnls_train(
     X, y,
-    regularizer=0.0, use_L=False, L=None, L_regularizer=None,
+    regularizer=0.0, use_L=False, L=None,
+    L_regularizer=None, L_regularizer_offset='AUTO',
+    data_preprocess=False,
     use_V0=False, V_regularizer='AUTO',
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
@@ -188,10 +191,12 @@ def apcnls_train(
     :param X: data matrix (each row is a sample)
     :param y: target vector
     :param partition: partition to be induced by the trained max-affine function
-    :param regularizer: ridge regularization parameter on the gradients
+    :param regularizer: ridge regularization parameter on the gradients (sum-grad)
     :param use_L: use L if provided
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
-    :param L_regularizer: soft constraint scaler on Lipschitz constant
+    :param L_regularizer: soft constraint scaler on Lipschitz constant (max-grad)
+    :param L_regularizer_offset: until this value the regularization should be zero
+    :param data_preprocess: perform recommended data preprocessing
     :param use_V0: set a hard constraint on the maximum max-affine violation
     :param V_regularizer: svaling the L2-regularizer of V
     :param backend: quadratic programming solver
@@ -202,6 +207,7 @@ def apcnls_train(
     """
     n, d = X.shape
     assert len(y) == n
+    assert n > d
     if len(y.shape) > 1:
         assert len(y.shape) == 2 and y.shape[1] == 1
         y = y.ravel()
@@ -216,31 +222,51 @@ def apcnls_train(
     elif isinstance(L, str):
         L = eval(L)
 
-    if isinstance(regularizer, str) and regularizer not in ('AUTO', 'DEFAULT'):
-        regularizer = eval(regularizer)
-    if isinstance(V_regularizer, str) and V_regularizer not in ('DEFAULT', 'AUTO'):
-        V_regularizer = eval(V_regularizer)
+    if data_preprocess:
+        xmean = np.mean(X)
+        X = X - xmean
+        xscale = np.sqrt(np.max(np.sum(np.square(X), axis=1)))
+        X /= xscale
+        ymean = np.mean(y)
+        y = y - ymean
+        yscale = np.max(abs(y))
+        y /= yscale
+    else:
+        xmean = xscale = None
+        ymean = yscale = None
 
     start = timer()
     partition = adaptive_farthest_point_clustering(data=X)
+    K = float(partition.ncells)
+    afpc_eps = partition_radius = max(cell_radiuses(X, partition))
     afpc_seconds = timer() - start
 
-    rad_scale = max(1.0, get_data_radius(X))
+    stdy = np.std(y)
+    data_eps = get_data_radius(X)
     if regularizer == 'AUTO':
         regularizer = 1.0
+    elif isinstance(regularizer, str):
+        regularizer = eval(regularizer)
     if L_regularizer == 'AUTO':
-        L_regularizer = (rad_scale**2) * d * float(partition.ncells)/n
+        L_regularizer = (data_eps**2)*K/(10*n)
+    elif isinstance(L_regularizer, str):
+        L_regularizer = eval(L_regularizer)
+    if L_regularizer_offset == 'AUTO':
+        L_regularizer_offset = np.log(n)
+    elif isinstance(L_regularizer_offset, str):
+        L_regularizer_offset = eval(L_regularizer_offset)
     if V_regularizer == 'AUTO':
         V_regularizer = d * np.log(n)
+    elif isinstance(V_regularizer, str):
+        V_regularizer = eval(V_regularizer)
 
     start = timer()
-    partition_radius = max(cell_radiuses(X, partition))
-    if regularizer == 'DEFAULT':
-        regularizer = (partition_radius**2) / float(partition.ncells)
     V0 = None if L is None or not use_V0 else 2*L*partition_radius
     H, g, A, b, cell_idx = apcnls_qp_data(
         X, y, partition,
-        regularizer=regularizer, L=L, L_regularizer=L_regularizer,
+        regularizer=regularizer, L=L,
+        L_regularizer=L_regularizer,
+        L_regularizer_offset=L_regularizer_offset,
         V0=V0, V_regularizer=V_regularizer,
     )
     if init_weights is not None:
@@ -290,15 +316,21 @@ def apcnls_train(
         max_viol=max_viol,
         regularizer=regularizer,
         dual_vars=dual_vars,
+        xmean=xmean,
+        xscale=xscale,
+        yscale=yscale,
+        ymean=ymean,
     )
 
 
-def _add_L_V0_to_Ab(L, L_regularizer, V0, K, d, A_data, A_rows, A_cols, row_idx):
+def _add_L_V0_to_Ab(L, L_regularizer, L_regularizer_offset,
+                    V0, K, d, A_data, A_rows, A_cols, row_idx):
     """
     Adding the Lipschitz constraints and the upper bound on the constraint relaxation (V)
     to the end of the constraint parameters A and b.
     """
     d1 = d + 1
+    row_idx_1 = row_idx
     if L is not None:
         for k in range(K):
             col0 = k * d1 + 1
@@ -319,6 +351,7 @@ def _add_L_V0_to_Ab(L, L_regularizer, V0, K, d, A_data, A_rows, A_cols, row_idx)
                 col = col0 + l
                 A_cols += [col, Kd1+1, col, Kd1+1]
     L_shift = 0
+    row_idx_2 = row_idx
     if V0 is not None:
         L_shift = 1
         A_data += [1.0]
@@ -329,6 +362,8 @@ def _add_L_V0_to_Ab(L, L_regularizer, V0, K, d, A_data, A_rows, A_cols, row_idx)
     b = np.zeros(row_idx)
     if L is not None:
         b[-2*K*d-L_shift:] = L
+    elif L_regularizer is not None:
+        b[row_idx_1:row_idx_2] = L_regularizer_offset
     if V0 is not None:
         b[-1] = V0
 
@@ -337,7 +372,9 @@ def _add_L_V0_to_Ab(L, L_regularizer, V0, K, d, A_data, A_rows, A_cols, row_idx)
 
 def apcnls_qp_data(
     X, y, partition,
-    regularizer=0.0, L=None, L_regularizer=None,
+    regularizer=0.0, L=None,
+    L_regularizer=None,
+    L_regularizer_offset=0.0,
     V0=None, V_regularizer=1.0,
     backend=QP_BACKEND__DEFAULT,
 ):
@@ -350,6 +387,7 @@ def apcnls_qp_data(
     :param regularizer: ridge regression regularizer
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
     :param L_regularizer: scaler for soft L regularization
+    :param L_regularizer_offset: up to this point L_regularization should be zero
     :param V0: maximum max-affine constraint violation
     :param V_regularizer: scaler for the L2-regularizer of V
     :param backend: quadratic programming solver
@@ -786,7 +824,8 @@ def apcnls_qp_data(
             A_rows += rows
             A_cols += list(np.kron(col_k + col_j + [Kd1], np.ones((cell_size, 1))).flatten())
     A_data, A_rows, A_cols, row_idx, b = _add_L_V0_to_Ab(
-        L, L_regularizer, V0, K, d, A_data, A_rows, A_cols, row_idx,
+        L, L_regularizer, L_regularizer_offset,
+        V0, K, d, A_data, A_rows, A_cols, row_idx,
     )
 
     H_mats.append(np.array([[n*V_regularizer]]))
