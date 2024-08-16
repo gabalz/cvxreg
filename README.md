@@ -69,7 +69,7 @@ source .../pyenv/bin/activate  # activating the virtual environment
 pip install --upgrade pip
 pip install --upgrade setuptools
 
-pip install numpy scipy osqp
+pip install numpy scipy osqp clarabel
 
 # Jupyter notebook (Optional):
 pip install joblib pandas 
