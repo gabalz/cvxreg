@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy.spatial import distance
-from common.distance import squared_distance
+from common.distance import euclidean_distance, squared_distance
 
 
 def find_min_dist_centers(data, partition, dist=squared_distance):
@@ -39,7 +39,7 @@ def find_min_dist_centers(data, partition, dist=squared_distance):
     return tuple(center_idxs)
 
 
-def cell_radiuses(data, partition, center_idxs=None, dist=squared_distance):
+def cell_radiuses(data, partition, center_idxs=None, dist=euclidean_distance):
     """Calculate all cell radiuses within a partition.
 
     :param data: data matrix (each row is a sample)
@@ -54,16 +54,25 @@ def cell_radiuses(data, partition, center_idxs=None, dist=squared_distance):
     ...      [-1., -1.], [-2., -1], [0., 1.]],
     ... )
     >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
-    >>> cell_radiuses(X, p)
+    >>> cell_radiuses(X, p, dist=squared_distance)
     (2.5, 1.0, 0.0)
+    >>> tuple(np.round(cell_radiuses(X, p), decimals=4))
+    (1.5811, 1.0, 0.0)
     """
+    if dist == euclidean_distance:
+        _dist = squared_distance
+    else:
+        _dist = dist
     if center_idxs is None:
-        center_idxs = find_min_dist_centers(data, partition, dist)
+        center_idxs = find_min_dist_centers(data, partition, _dist)
     assert partition.ncells == len(center_idxs)
-    return tuple([
-        max(dist(data[cell, :], data[center_idx, :]))
+    r = tuple([
+        max(_dist(data[cell, :], data[center_idx, :]))
         for cell, center_idx in zip(partition.cells, center_idxs)
     ])
+    if dist == euclidean_distance:
+        r = tuple([np.sqrt(v) for v in r])
+    return r
 
 
 def voronoi_partition(centers, data, dist=squared_distance):

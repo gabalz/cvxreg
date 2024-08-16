@@ -1,6 +1,6 @@
 import numpy as np
 
-from common.distance import squared_distance
+from common.distance import euclidean_distance, squared_distance
 from common.partition import Partition, voronoi_partition, cell_radiuses
 
 
@@ -89,34 +89,45 @@ def farthest_point_clustering(
     return voronoi_partition(data[center_idxs, :], data)
 
 
-def get_data_radius(data, dist=squared_distance):
-    return max(dist(data, np.mean(data, axis=0)))
+def get_data_radius(data, dist=euclidean_distance):
+    if dist == euclidean_distance:
+        _dist = squared_distance
+    else:
+        _dist = dist
+    r = max(_dist(data, np.mean(data, axis=0)))
+    if dist == euclidean_distance:
+        r = np.sqrt(r)
+    return r
 
 
 def adaptive_farthest_point_clustering(
-    data, dist=squared_distance, first_idx=FPC_FIRST_IDX__DEFAULT,
+    data, dist=euclidean_distance, p=1,
+    first_idx=FPC_FIRST_IDX__DEFAULT,
+    return_center_idxs=False,
 ):
     """Computes a partition of the adaptive farthest-point clustering (AFPC) algorithm.
 
     :param data: data matrix (each row is a sample)
     :param dist: distance function
+    :param p: scaler for stopping condition
     :param first_idx: decides how the first index is selected
+    :param return_center_idxs: if True, center_idxs also returned
     :return: partition represented by the sample indices (Partition object)
 
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
     >>> X = np.random.randn(200, 2)
-    >>> p = adaptive_farthest_point_clustering(data=X)
-    >>> p.npoints
+    >>> partition = adaptive_farthest_point_clustering(data=X)
+    >>> partition.npoints
     200
-    >>> p.ncells
-    9
-    >>> [len(c) for c in p.cells]
-    [123, 3, 5, 7, 5, 17, 15, 6, 19]
-    >>> [int(np.mean(c)) for c in p.cells]
-    [97, 160, 110, 119, 124, 88, 95, 92, 98]
-    >>> np.round(max(cell_radiuses(X, p)), decimals=4)
-    2.0427
+    >>> partition.ncells
+    15
+    >>> [len(c) for c in partition.cells]
+    [63, 1, 5, 3, 1, 5, 4, 3, 13, 17, 10, 14, 16, 23, 22]
+    >>> [int(np.mean(c)) for c in partition.cells]
+    [107, 117, 110, 166, 71, 110, 137, 81, 107, 111, 86, 67, 83, 100, 81]
+    >>> np.round(max(cell_radiuses(X, partition)), decimals=4)
+    0.8883
 
     >>> C = np.random.randn(5, 3)
     >>> C
@@ -127,14 +138,14 @@ def adaptive_farthest_point_clustering(
            [-0.84831213, -1.02133226,  0.38650518]])
     >>> X = C[np.random.randint(C.shape[0], size=(100,)), :]
     >>> X += np.random.randn(*X.shape) * 0.1
-    >>> p = adaptive_farthest_point_clustering(data=X)
-    >>> p.npoints
+    >>> partition = adaptive_farthest_point_clustering(data=X, p=2)
+    >>> partition.npoints
     100
-    >>> p.ncells
+    >>> partition.ncells
     5
-    >>> [len(c) for c in p.cells]
+    >>> [len(c) for c in partition.cells]
     [15, 17, 22, 21, 25]
-    >>> np.vstack([np.mean(X[c, :], axis=0).T for c in p.cells])
+    >>> np.vstack([np.mean(X[c, :], axis=0).T for c in partition.cells])
     array([[-0.49366699, -0.04686255, -0.77307882],
            [-0.61269755, -1.07736845, -1.77314976],
            [-0.86476045, -0.98983781,  0.40252153],
@@ -145,7 +156,8 @@ def adaptive_farthest_point_clustering(
     data_radius = get_data_radius(data, dist)
     center_idxs = [_fpc_first_center_idx(data, first_idx, dist)]
 
-    maxK = int(np.ceil(n**(d/(2+d))))
+    p2 = 2*p
+    maxK = int(np.ceil(n**(d/(p2+d))))
     min_center_dists = dist(data, data[center_idxs[0], :])
     closest_centers = np.zeros(n, dtype=int)
     update_cond = np.empty(n, dtype=bool)
@@ -154,7 +166,7 @@ def adaptive_farthest_point_clustering(
             break
 
         radius = np.max(min_center_dists)
-        if n * np.square(radius/data_radius) <= K:
+        if n * (radius/data_radius)**p2 <= K:
             break
 
         maxi = np.argmax(min_center_dists)
@@ -166,4 +178,7 @@ def adaptive_farthest_point_clustering(
         np.minimum(min_center_dists, maxi_dists, out=min_center_dists)
 
     cells = tuple([np.where(closest_centers == k)[0] for k in range(len(center_idxs))])
-    return Partition(npoints=n, ncells=len(cells), cells=cells)
+    partition = Partition(npoints=n, ncells=len(cells), cells=cells)
+    if return_center_idxs:
+        return partition, center_idxs
+    return partition

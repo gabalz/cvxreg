@@ -38,69 +38,69 @@ class APCNLSEstimator(Estimator):
     >>> apcnls1 = APCNLSEstimator()
     >>> model1 = apcnls1.train(X, y)  # missing Lipschitz constant
     >>> model1.weights.shape
-    (9, 3)
+    (15, 3)
     >>> np.round(model1.V, decimals=4)
-    0.0384
+    0.0691
     >>> model1.V0 is None
     True
     >>> np.round(model1.obj_val, decimals=4)
-    -925.3175
+    -938.8012
     >>> np.round(model1.proj_obj_val, decimals=4)
-    -927.0106
+    -944.08
     >>> np.round(model1.train_diff, decimals=4)
-    0.0058
+    0.0129
     >>> np.round(model1.cell_diff_max, decimals=4)
-    1.2003
+    2.4926
     >>> np.round(model1.partition_radius, decimals=4)
-    2.0427
+    0.8883
     >>> np.round(model1.proj_diff_corr, decimals=4)
-    -0.0007
+    -0.0015
     >>> yhat1 = apcnls1.predict(model1, X)
     >>> np.round(np.sum(np.square(yhat1 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.3683
+    0.1976
     >>> yhat1_test = apcnls1.predict(model1, X_test)
     >>> np.round(np.sum(np.square(yhat1_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.4312
+    0.1665
 
     >>> apcnls2 = APCNLSEstimator()
-    >>> model2 = apcnls2.train(X, y, use_L=True, L=4.5, use_V0=True,
+    >>> model2 = apcnls2.train(X, y, afpc_p=2, use_L=True, L=4.5, use_V0=True,
     ...                        L_regularizer=None, V_regularizer=1.0/X.shape[0])  # good Lipschitz constant
     >>> model2.weights.shape
-    (9, 3)
+    (7, 3)
     >>> np.round(model2.V, decimals=4)
-    1.2982
+    1.1916
     >>> np.round(model2.V0, decimals=4)
-    18.3841
+    13.5358
     >>> np.round(model2.partition_radius, decimals=4)
-    2.0427
+    1.504
     >>> np.round(model2.proj_diff_corr, decimals=4)
-    -0.0983
+    -0.089
     >>> yhat2 = apcnls2.predict(model2, X)
     >>> np.round(np.sum(np.square(yhat2 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.1396
+    0.1328
     >>> yhat2_test = apcnls2.predict(model2, X_test)
     >>> np.round(np.sum(np.square(yhat2_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.1452
+    0.1253
 
     >>> apcnls3 = APCNLSEstimator()
     >>> model3 = apcnls3.train(X, y, use_L=True, L=4.5, use_V0=False,
     ...                        L_regularizer=None, V_regularizer=1.0)  # good Lipschitz constant
     >>> model3.weights.shape
-    (9, 3)
+    (15, 3)
     >>> np.round(model3.V, decimals=4)
-    0.218
+    0.2329
     >>> model3.V0 is None
     True
     >>> np.round(model3.partition_radius, decimals=4)
-    2.0427
+    0.8883
     >>> np.round(model3.proj_diff_corr, decimals=4)
-    -0.0117
+    -0.0061
     >>> yhat3 = apcnls3.predict(model3, X)
     >>> np.round(np.sum(np.square(yhat3 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.2901
+    0.0556
     >>> yhat3_test = apcnls3.predict(model3, X_test)
     >>> np.round(np.sum(np.square(yhat3_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.3243
+    0.0378
 
     >>> set_random_seed(17)
 
@@ -120,23 +120,23 @@ class APCNLSEstimator(Estimator):
     >>> apcnls4 = APCNLSEstimator()
     >>> model4 = apcnls4.train(X, y)  # good Lipschitz constant
     >>> model4.weights.shape
-    (25, 6)
+    (48, 6)
     >>> np.round(model4.obj_val, decimals=1)
-    -1265.7
+    -1289.1
     >>> np.round(model4.proj_obj_val, decimals=1)
-    -1265.7
+    -1289.1
     >>> np.round(model4.V, decimals=4)
-    0.0017
+    0.0009
     >>> np.round(model4.partition_radius, decimals=4)
-    5.8376
+    1.8476
     >>> np.round(model4.train_diff, decimals=4)
     0.0002
     >>> yhat4 = apcnls4.predict(model4, X)
     >>> np.round(np.sum(np.square(yhat4 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.2199
+    0.0637
     >>> yhat4_test = apcnls4.predict(model4, X_test)
     >>> np.round(np.sum(np.square(yhat4_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.5371
+    0.3013
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
@@ -181,7 +181,7 @@ def apcnls_train(
     X, y,
     regularizer=0.0, use_L=False, L=None,
     L_regularizer=None, L_regularizer_offset='AUTO',
-    data_preprocess=False,
+    afpc_p=1, data_preprocess=False,
     use_V0=False, V_regularizer='AUTO',
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
@@ -196,6 +196,7 @@ def apcnls_train(
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
     :param L_regularizer: soft constraint scaler on Lipschitz constant (max-grad)
     :param L_regularizer_offset: until this value the regularization should be zero
+    :param afpc_p: scaling parameter for AFPC stopping rule
     :param data_preprocess: perform recommended data preprocessing
     :param use_V0: set a hard constraint on the maximum max-affine violation
     :param V_regularizer: svaling the L2-regularizer of V
@@ -236,7 +237,7 @@ def apcnls_train(
         ymean = yscale = None
 
     start = timer()
-    partition = adaptive_farthest_point_clustering(data=X)
+    partition = adaptive_farthest_point_clustering(data=X, p=afpc_p)
     K = float(partition.ncells)
     afpc_eps = partition_radius = max(cell_radiuses(X, partition))
     afpc_seconds = timer() - start
