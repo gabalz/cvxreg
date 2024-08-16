@@ -106,7 +106,7 @@ def qp_solve(
                                  clarabel.SolverStatus.MaxIterations,
                                  clarabel.SolverStatus.MaxTime), f'status: {result.status}'
         primal_soln = np.array(result.x)
-        dual_soln = np.array(result.z)        
+        dual_soln = np.array(result.z)
     else:
         raise NotImplementedError('Not supported backend: {}'.format(backend))
 
