@@ -1,11 +1,11 @@
 
 from functools import partial
-from xgboost import XGBRegressor
 
 from common.estimator import Estimator
 
 
 def xgb_train(X, y, **kwargs):
+    from xgboost import XGBRegressor
     kwargs = dict(kwargs)
     if 'L' in kwargs:
         del kwargs['L']

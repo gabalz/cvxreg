@@ -1,11 +1,11 @@
 
 from functools import partial
-from sklearn.neighbors import KNeighborsRegressor
 
 from common.estimator import Estimator
 
 
 def nearest_neighbors_train(X, y, **kwargs):
+    from sklearn.neighbors import KNeighborsRegressor
     kwargs = dict(kwargs)
     if 'L' in kwargs:
         del kwargs['L']

@@ -1,11 +1,11 @@
 
 from functools import partial
-from sklearn.ensemble import RandomForestRegressor
 
 from common.estimator import Estimator
 
 
 def random_forest_train(X, y, **kwargs):
+    from sklearn.ensemble import RandomForestRegressor
     kwargs = dict(kwargs)
     if 'L' in kwargs:
         del kwargs['L']

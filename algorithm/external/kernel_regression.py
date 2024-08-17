@@ -1,16 +1,16 @@
 
 import numpy as np
 from functools import partial
-from sklearn.model_selection import GridSearchCV
-from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
-from skfda.ml.regression import KernelRegression
-from skfda.misc.kernels import epanechnikov, normal, uniform
 
 from common.estimator import Estimator
 from algorithm.apcnls.fpc import get_data_radius
 
 
 def kernel_reg_train(X, y, kernel, **kwargs):
+    from sklearn.model_selection import GridSearchCV
+    from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
+    from skfda.ml.regression import KernelRegression
+    from skfda.misc.kernels import epanechnikov, normal, uniform
     kwargs = dict(kwargs)
     if 'L' in kwargs:
         del kwargs['L']
