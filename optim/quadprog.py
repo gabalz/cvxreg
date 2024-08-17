@@ -16,7 +16,7 @@ def convert_matrix_to_qp_solver_format(x, backend):
     return y
 
 
-class QPResult(object):
+class QPResult:
     """"Result and statistics of a QP optimization."""
     def __init__(self, primal_soln, dual_soln, stat):
         """
@@ -44,7 +44,8 @@ def qp_solve(
     :param H: objective symmetric positive semi-definite matrix
     :param g: objective vector
     :param A: constraint matrix
-    :param b: constraint vector
+    :param ub: constraint vector
+    :param lb: constraint vector
     :param x0: warm starting primal initialization vector
     :param y0: warm starting dual initialization vector
     :param maxiter: maximum number of iterations
@@ -99,7 +100,7 @@ def qp_solve(
         if verbose:
             print(f'status: {result.status}')
             if result.x is not None:
-                print('max(A*x-b): {}'.format((A.dot(result.x)-ub).max()))
+                print('max(A*x-ub): {}'.format((A.dot(result.x)-ub).max()))
         stat = result.status
         assert result.status in (clarabel.SolverStatus.Solved,
                                  clarabel.SolverStatus.AlmostSolved,

@@ -3,7 +3,7 @@ import numpy as np
 from common.estimator import EstimatorModel
 
 
-def _prepare_prediction(model, X, extend_X1):
+def prepare_prediction(model, X, extend_X1):
     if isinstance(model, EstimatorModel):
         weights = model.weights
         if model.xmean is not None:
@@ -17,7 +17,7 @@ def _prepare_prediction(model, X, extend_X1):
     return weights, X
 
 
-def _postprocess_prediction(model, yhat):
+def postprocess_prediction(model, yhat):
     if isinstance(model, EstimatorModel):
         if model.yscale is not None:
             yhat *= model.yscale
@@ -45,7 +45,7 @@ def partition_predict(partition, model, X, extend_X1=True):
     array([ 6.5, -2.2,  5.5,  3. , -0.5])
     """
     assert partition.npoints == X.shape[0]
-    weights, X = _prepare_prediction(model, X, extend_X1)
+    weights, X = prepare_prediction(model, X, extend_X1)
     assert partition.ncells == weights.shape[0]
     yhat = np.zeros(X.shape[0])
     for i, cell in enumerate(partition.cells):
@@ -71,9 +71,9 @@ def max_affine_predict(model, X, extend_X1=True):
     >>> max_affine_predict(W, X)
     array([6.5, 2.2, 5.5, 3. , 0.5])
     """
-    weights, X = _prepare_prediction(model, X, extend_X1)
+    weights, X = prepare_prediction(model, X, extend_X1)
     yhat = np.max(X.dot(weights.T), axis=1)
-    return _postprocess_prediction(model, yhat)
+    return postprocess_prediction(model, yhat)
 
 
 def max_affine_fit_partition(partition, X, y, extend_X1=True, rcond=None):
