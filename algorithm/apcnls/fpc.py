@@ -101,7 +101,7 @@ def get_data_radius(data, dist=euclidean_distance):
 
 
 def adaptive_farthest_point_clustering(
-    data, dist=euclidean_distance, p=1,
+    data, dist=euclidean_distance, q=1,
     first_idx=FPC_FIRST_IDX__DEFAULT,
     return_center_idxs=False,
 ):
@@ -109,7 +109,7 @@ def adaptive_farthest_point_clustering(
 
     :param data: data matrix (each row is a sample)
     :param dist: distance function
-    :param p: scaler for stopping condition
+    :param q: scaler for stopping condition
     :param first_idx: decides how the first index is selected
     :param return_center_idxs: if True, center_idxs also returned
     :return: partition represented by the sample indices (Partition object)
@@ -138,7 +138,7 @@ def adaptive_farthest_point_clustering(
            [-0.84831213, -1.02133226,  0.38650518]])
     >>> X = C[np.random.randint(C.shape[0], size=(100,)), :]
     >>> X += np.random.randn(*X.shape) * 0.1
-    >>> partition = adaptive_farthest_point_clustering(data=X, p=2)
+    >>> partition = adaptive_farthest_point_clustering(data=X, q=2)
     >>> partition.npoints
     100
     >>> partition.ncells
@@ -156,8 +156,8 @@ def adaptive_farthest_point_clustering(
     data_radius = get_data_radius(data, dist)
     center_idxs = [_fpc_first_center_idx(data, first_idx, dist)]
 
-    p2 = 2*p
-    maxK = int(np.ceil(n**(d/(p2+d))))
+    q2 = 2*q
+    maxK = int(np.ceil(n**(d/(q2+d))))
     min_center_dists = dist(data, data[center_idxs[0], :])
     closest_centers = np.zeros(n, dtype=int)
     update_cond = np.empty(n, dtype=bool)
@@ -166,7 +166,7 @@ def adaptive_farthest_point_clustering(
             break
 
         radius = np.max(min_center_dists)
-        if n * (radius/data_radius)**p2 <= K:
+        if n * (radius/data_radius)**q2 <= K:
             break
 
         maxi = np.argmax(min_center_dists)

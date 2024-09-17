@@ -10,7 +10,7 @@ def kernel_reg_train(X, y, kernel, **kwargs):
     from sklearn.model_selection import GridSearchCV
     from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
     from skfda.ml.regression import KernelRegression
-    from skfda.misc.kernels import epanechnikov, normal, uniform
+    from skfda.misc.kernels import epanechnikov, normal, uniform, tri_weight
     kwargs = dict(kwargs)
     if 'L' in kwargs:
         del kwargs['L']
@@ -22,6 +22,8 @@ def kernel_reg_train(X, y, kernel, **kwargs):
             kernel = uniform
         elif kernel == 'epanechnikov':
             kernel = epanechnikov
+        elif kernel == 'tri_weight':
+            kernel = tri_weight
         else:
             raise Exception(f'Not supported kernel: {kernel}')
     n, d = X.shape

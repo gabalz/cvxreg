@@ -63,7 +63,7 @@ class APCNLSEstimator(Estimator):
     0.1665
 
     >>> apcnls2 = APCNLSEstimator()
-    >>> model2 = apcnls2.train(X, y, afpc_p=2, use_L=True, L=4.5, use_V0=True,
+    >>> model2 = apcnls2.train(X, y, afpc_q=2, use_L=True, L=4.5, use_V0=True,
     ...                        L_regularizer=None, V_regularizer=1.0/X.shape[0])  # good Lipschitz constant
     >>> model2.weights.shape
     (7, 3)
@@ -181,7 +181,7 @@ def apcnls_train(
     X, y,
     regularizer=0.0, use_L=False, L=None,
     L_regularizer=None, L_regularizer_offset='AUTO',
-    afpc_p=1, data_preprocess=False,
+    afpc_q=1, data_preprocess=False,
     use_V0=False, V_regularizer='AUTO',
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
@@ -196,7 +196,7 @@ def apcnls_train(
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
     :param L_regularizer: soft constraint scaler on Lipschitz constant (max-grad)
     :param L_regularizer_offset: until this value the regularization should be zero
-    :param afpc_p: scaling parameter for AFPC stopping rule
+    :param afpc_q: scaling parameter for AFPC stopping rule
     :param data_preprocess: perform recommended data preprocessing
     :param use_V0: set a hard constraint on the maximum max-affine violation
     :param V_regularizer: svaling the L2-regularizer of V
@@ -237,7 +237,7 @@ def apcnls_train(
         ymean = yscale = None
 
     start = timer()
-    partition = adaptive_farthest_point_clustering(data=X, p=afpc_p)
+    partition = adaptive_farthest_point_clustering(data=X, q=afpc_q)
     K = float(partition.ncells)
     afpc_eps = partition_radius = max(cell_radiuses(X, partition))
     afpc_seconds = timer() - start
