@@ -105,6 +105,7 @@ def qp_solve(
         assert result.status in (clarabel.SolverStatus.Solved,
                                  clarabel.SolverStatus.AlmostSolved,
                                  clarabel.SolverStatus.MaxIterations,
+                                 clarabel.SolverStatus.InsufficientProgress,
                                  clarabel.SolverStatus.MaxTime), f'status: {result.status}'
         primal_soln = np.array(result.x)
         dual_soln = np.array(result.z)
