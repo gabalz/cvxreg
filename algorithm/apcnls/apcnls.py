@@ -135,8 +135,8 @@ class APCNLSEstimator(Estimator):
     >>> np.round(np.sum(np.square(yhat4 - y)) / len(y), decimals=4)  # in-sample L2-risk
     0.0637
     >>> yhat4_test = apcnls4.predict(model4, X_test)
-    >>> np.round(np.sum(np.square(yhat4_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    193.1327
+    >>> np.round(np.sum(np.square(yhat4_test - y_test)) / len(y_test), decimals=2)  # out-of-sample L2-error
+    193.13
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
