@@ -5,7 +5,7 @@ from scipy import sparse
 
 QP_BACKEND__OSQP = 'osqp'
 QP_BACKEND__CLARABEL = 'clarabel'
-QP_BACKEND__DEFAULT = QP_BACKEND__OSQP
+QP_BACKEND__DEFAULT = QP_BACKEND__CLARABEL
 
 
 def convert_matrix_to_qp_solver_format(x, backend):
