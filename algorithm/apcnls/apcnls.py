@@ -4,7 +4,7 @@ import numpy as np
 
 from functools import partial
 from timeit import default_timer as timer
-from scipy.sparse import block_diag, coo_matrix
+from scipy.sparse import block_diag, coo_matrix, triu
 
 from common.estimator import EstimatorModel, Estimator
 from common.regression import max_affine_predict, partition_predict
@@ -40,31 +40,31 @@ class APCNLSEstimator(Estimator):
     >>> model1.weights.shape
     (15, 3)
     >>> np.round(model1.V, decimals=4)
-    0.0691
+    0.0688
     >>> model1.V0 is None
     True
     >>> np.round(model1.obj_val, decimals=4)
-    -938.8012
+    -4.695
     >>> np.round(model1.proj_obj_val, decimals=4)
-    -944.08
+    -4.7208
     >>> np.round(model1.train_diff, decimals=4)
-    0.0129
+    0.0121
     >>> np.round(model1.cell_diff_max, decimals=4)
-    2.4926
+    2.4772
     >>> np.round(model1.partition_radius, decimals=4)
     0.8883
     >>> np.round(model1.proj_diff_corr, decimals=4)
-    -0.0015
+    -0.001
     >>> yhat1 = apcnls1.predict(model1, X)
     >>> np.round(np.sum(np.square(yhat1 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.1976
+    0.1968
     >>> yhat1_test = apcnls1.predict(model1, X_test)
     >>> np.round(np.sum(np.square(yhat1_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.1665
+    0.1805
 
     >>> apcnls2 = APCNLSEstimator()
     >>> model2 = apcnls2.train(X, y, afpc_q=2, use_L=True, L=4.5, use_V0=True,
-    ...                        L_regularizer=None, V_regularizer=1.0/X.shape[0])  # good Lipschitz constant
+    ...                        L_regularizer=None, v_regularizer=1.0/X.shape[0])  # good Lipschitz constant
     >>> model2.weights.shape
     (7, 3)
     >>> np.round(model2.V, decimals=4)
@@ -74,7 +74,7 @@ class APCNLSEstimator(Estimator):
     >>> np.round(model2.partition_radius, decimals=4)
     1.504
     >>> np.round(model2.proj_diff_corr, decimals=4)
-    -0.089
+    -0.0891
     >>> yhat2 = apcnls2.predict(model2, X)
     >>> np.round(np.sum(np.square(yhat2 - y)) / len(y), decimals=4)  # in-sample L2-risk
     0.1328
@@ -84,23 +84,23 @@ class APCNLSEstimator(Estimator):
 
     >>> apcnls3 = APCNLSEstimator()
     >>> model3 = apcnls3.train(X, y, use_L=True, L=4.5, use_V0=False,
-    ...                        L_regularizer=None, V_regularizer=1.0)  # good Lipschitz constant
+    ...                        L_regularizer=None, v_regularizer=1.0)  # good Lipschitz constant
     >>> model3.weights.shape
     (15, 3)
     >>> np.round(model3.V, decimals=4)
-    0.2329
+    0.2336
     >>> model3.V0 is None
     True
     >>> np.round(model3.partition_radius, decimals=4)
     0.8883
     >>> np.round(model3.proj_diff_corr, decimals=4)
-    -0.0061
+    -0.0056
     >>> yhat3 = apcnls3.predict(model3, X)
     >>> np.round(np.sum(np.square(yhat3 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.0556
+    0.0564
     >>> yhat3_test = apcnls3.predict(model3, X_test)
     >>> np.round(np.sum(np.square(yhat3_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.0378
+    0.0434
 
     >>> set_random_seed(17)
 
@@ -122,9 +122,9 @@ class APCNLSEstimator(Estimator):
     >>> model4.weights.shape
     (48, 6)
     >>> np.round(model4.obj_val, decimals=1)
-    -1289.1
+    -4.3
     >>> np.round(model4.proj_obj_val, decimals=1)
-    -1289.1
+    -4.3
     >>> np.round(model4.V, decimals=4)
     0.0009
     >>> np.round(model4.partition_radius, decimals=4)
@@ -135,8 +135,8 @@ class APCNLSEstimator(Estimator):
     >>> np.round(np.sum(np.square(yhat4 - y)) / len(y), decimals=4)  # in-sample L2-risk
     0.0637
     >>> yhat4_test = apcnls4.predict(model4, X_test)
-    >>> np.round(np.sum(np.square(yhat4_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.3013
+    >>> np.round(np.sum(np.square(yhat4_test - y_test)) / len(y_test), decimals=2)  # out-of-sample L2-error
+    193.13
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
@@ -152,7 +152,7 @@ class APCNLSEstimatorModel(EstimatorModel):
         self, weights, V, V0, L_est, partition_radius, proj_diff_corr, train_diff,
         cell_diff_min, cell_diff_max, cell_diff_mean, cell_diff_median, cell_diff_std,
         nqpiter, afpc_seconds, qp_seconds,
-        obj_val, proj_obj_val, max_viol, regularizer, dual_vars,
+        obj_val, proj_obj_val, max_viol, L_sum_regularizer, dual_vars,
         xmean, xscale, yscale, ymean,
     ):
         EstimatorModel.__init__(self, weights, xmean, xscale, yscale, ymean)
@@ -167,7 +167,7 @@ class APCNLSEstimatorModel(EstimatorModel):
         self.cell_diff_mean = cell_diff_mean
         self.cell_diff_median = cell_diff_median
         self.cell_diff_std = cell_diff_std
-        self.regularizer = regularizer
+        self.L_sum_regularizer = L_sum_regularizer
         self.nqpiter = nqpiter
         self.afpc_seconds = afpc_seconds
         self.qp_seconds = qp_seconds
@@ -179,10 +179,10 @@ class APCNLSEstimatorModel(EstimatorModel):
 
 def apcnls_train(
     X, y,
-    regularizer=0.0, use_L=False, L=None,
+    L_sum_regularizer=0.0, use_L=False, L=None,
     L_regularizer=None, L_regularizer_offset='AUTO',
     afpc_q=1, data_preprocess=False,
-    use_V0=False, V_regularizer='AUTO',
+    use_V0=False, v_regularizer='AUTO',
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
 ):
@@ -191,7 +191,7 @@ def apcnls_train(
     :param X: data matrix (each row is a sample)
     :param y: target vector
     :param partition: partition to be induced by the trained max-affine function
-    :param regularizer: ridge regularization parameter on the gradients (sum-grad)
+    :param L_sum_regularizer: ridge regularization parameter on the gradients (sum-grad)
     :param use_L: use L if provided
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
     :param L_regularizer: soft constraint scaler on Lipschitz constant (max-grad)
@@ -199,7 +199,7 @@ def apcnls_train(
     :param afpc_q: scaling parameter for AFPC stopping rule
     :param data_preprocess: perform recommended data preprocessing
     :param use_V0: set a hard constraint on the maximum max-affine violation
-    :param V_regularizer: svaling the L2-regularizer of V
+    :param v_regularizer: svaling the L2-regularizer of V
     :param backend: quadratic programming solver
     :param verbose: whether to print verbose output
     :param init_weights: warm starting weights for QP
@@ -214,8 +214,8 @@ def apcnls_train(
         y = y.ravel()
 
     if verbose > 0:
-        print('Training APCNLS, n: {}, d: {}, L: {}, regularizer: {}'.format(
-            X.shape[0], X.shape[1], L, regularizer,
+        print('Training APCNLS, n: {}, d: {}, L: {}'.format(
+            X.shape[0], X.shape[1], L,
         ))
 
     if not use_L:
@@ -242,33 +242,32 @@ def apcnls_train(
     afpc_eps = partition_radius = max(cell_radiuses(X, partition))
     afpc_seconds = timer() - start
 
-    stdy = np.std(y)
-    data_eps = get_data_radius(X)
-    if regularizer == 'AUTO':
-        regularizer = 1.0
-    elif isinstance(regularizer, str):
-        regularizer = eval(regularizer)
+    x_radius = get_data_radius(X)
+    if L_sum_regularizer == 'AUTO':
+        L_sum_regularizer = x_radius**2 * (d/n)
+    elif isinstance(L_sum_regularizer, str):
+        L_sum_regularizer = eval(L_sum_regularizer)
     if L_regularizer == 'AUTO':
-        L_regularizer = (data_eps**2)*K/(10*n)
+        L_regularizer = max(1.0, x_radius)**2 * (K/n)
     elif isinstance(L_regularizer, str):
         L_regularizer = eval(L_regularizer)
     if L_regularizer_offset == 'AUTO':
         L_regularizer_offset = np.log(n)
     elif isinstance(L_regularizer_offset, str):
         L_regularizer_offset = eval(L_regularizer_offset)
-    if V_regularizer == 'AUTO':
-        V_regularizer = d * np.log(n)
-    elif isinstance(V_regularizer, str):
-        V_regularizer = eval(V_regularizer)
+    if v_regularizer == 'AUTO':
+        v_regularizer = d * np.log(n)
+    elif isinstance(v_regularizer, str):
+        v_regularizer = eval(v_regularizer)
 
     start = timer()
     V0 = None if L is None or not use_V0 else 2*L*partition_radius
     H, g, A, b, cell_idx = apcnls_qp_data(
         X, y, partition,
-        regularizer=regularizer, L=L,
+        L_sum_regularizer=L_sum_regularizer, L=L,
         L_regularizer=L_regularizer,
         L_regularizer_offset=L_regularizer_offset,
-        V0=V0, V_regularizer=V_regularizer,
+        V0=V0, v_regularizer=v_regularizer,
     )
     if init_weights is not None:
         init_weights = init_weights.ravel()
@@ -283,7 +282,10 @@ def apcnls_train(
     dual_vars = res.dual_soln
 
     max_viol = max(0.0, np.max(A.dot(weights) - b))
-    obj_val = 0.5*weights.dot(H.dot(weights)) + g.dot(weights)
+    obj_val = (
+        0.5 * (weights.dot(H.dot(weights)) + weights.dot(triu(H, 1).dot(weights)))
+        + g.dot(weights)
+    )
 
     L_est = None
     if L_regularizer is not None:
@@ -292,7 +294,7 @@ def apcnls_train(
     V = weights[-1]
     weights = np.reshape(weights[:-1], (partition.ncells, (1+X.shape[1])))
     yhat = max_affine_predict(weights, X)
-    proj_obj_val = 0.5 * (np.sum(np.square(y - yhat)) - y.dot(y))
+    proj_obj_val = 0.5 * (np.mean(np.square(y - yhat)) - y.dot(y)/n)
 
     yhat_partition = partition_predict(partition, weights, X)
     cell_diffs = [np.mean((yhat_partition - y)[cell]) for cell in partition.cells]
@@ -315,7 +317,7 @@ def apcnls_train(
         obj_val=obj_val,
         proj_obj_val=proj_obj_val,
         max_viol=max_viol,
-        regularizer=regularizer,
+        L_sum_regularizer=L_sum_regularizer,
         dual_vars=dual_vars,
         xmean=xmean,
         xscale=xscale,
@@ -373,10 +375,10 @@ def _add_L_V0_to_Ab(L, L_regularizer, L_regularizer_offset,
 
 def apcnls_qp_data(
     X, y, partition,
-    regularizer=0.0, L=None,
+    L_sum_regularizer=0.0, L=None,
     L_regularizer=None,
     L_regularizer_offset=0.0,
-    V0=None, V_regularizer=1.0,
+    V0=None, v_regularizer=1.0,
     backend=QP_BACKEND__DEFAULT,
 ):
     """Constructing max-affine convex regression matrices for quadratic programming (QP).
@@ -385,12 +387,12 @@ def apcnls_qp_data(
     :param X: data matrix (each row is a sample, without augmented leading 1s)
     :param y: target vector
     :param partition: induced partition by the considered max-affine functions
-    :param regularizer: ridge regression regularizer
+    :param L_sum_regularizer: ridge regression regularizer
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
     :param L_regularizer: scaler for soft L regularization
     :param L_regularizer_offset: up to this point L_regularization should be zero
     :param V0: maximum max-affine constraint violation
-    :param V_regularizer: scaler for the L2-regularizer of V
+    :param v_regularizer: scaler for the L2-regularizer of V
     :param backend: quadratic programming solver
     :return: QP parameters H, g, A, b, and the constraint row index for each cell
 
@@ -400,7 +402,7 @@ def apcnls_qp_data(
     >>> p = singleton_partition(len(y))
 
 
-    >>> H, g, A, b, cell_idx = apcnls_qp_data(X, y, p, regularizer=0.1)
+    >>> H, g, A, b, cell_idx = apcnls_qp_data(X, y, p, L_sum_regularizer=0.1)
     >>> cell_idx
     array([ 0,  4,  8, 12, 16])
     >>> H.shape
@@ -408,17 +410,17 @@ def apcnls_qp_data(
     >>> np.linalg.matrix_rank(H.toarray())
     16
     >>> H.nnz
-    46
-    >>> H.toarray()[:, :9]
-    array([[ 1.  ,  1.1 ,  1.1 ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
-           [ 1.1 ,  1.31,  1.21,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
-           [ 1.1 ,  1.21,  1.31,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
-           [ 0.  ,  0.  ,  0.  ,  1.  , -1.2 ,  1.2 ,  0.  ,  0.  ,  0.  ],
-           [ 0.  ,  0.  ,  0.  , -1.2 ,  1.54, -1.44,  0.  ,  0.  ,  0.  ],
-           [ 0.  ,  0.  ,  0.  ,  1.2 , -1.44,  1.54,  0.  ,  0.  ,  0.  ],
-           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  1.  , -1.3 , -1.3 ],
-           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  , -1.3 ,  1.79,  1.69],
-           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  , -1.3 ,  1.69,  1.79],
+    31
+    >>> np.round(H.toarray()[:, :9], decimals=2)
+    array([[ 0.2 ,  0.22,  0.22,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
+           [ 0.  ,  0.26,  0.24,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
+           [ 0.  ,  0.  ,  0.26,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
+           [ 0.  ,  0.  ,  0.  ,  0.2 , -0.24,  0.24,  0.  ,  0.  ,  0.  ],
+           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.31, -0.29,  0.  ,  0.  ,  0.  ],
+           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.31,  0.  ,  0.  ,  0.  ],
+           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.2 , -0.26, -0.26],
+           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.36,  0.34],
+           [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.36],
            [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
            [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
            [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
@@ -427,12 +429,12 @@ def apcnls_qp_data(
            [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ],
            [ 0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ,  0.  ]])
     >>> H.toarray()[-3:, -3:]
-    array([[ 2.35, -2.25,  0.  ],
-           [-2.25,  2.35,  0.  ],
-           [ 0.  ,  0.  ,  5.  ]])
+    array([[ 0.47, -0.45,  0.  ],
+           [ 0.  ,  0.47,  0.  ],
+           [ 0.  ,  0.  ,  1.  ]])
     >>> g
-    array([-1.1 , -1.21, -1.21, -1.2 ,  1.44, -1.44, -1.3 ,  1.69,  1.69,
-           -0.4 , -0.16, -0.16, -0.5 , -0.75,  0.75,  0.  ])
+    array([-0.22 , -0.242, -0.242, -0.24 ,  0.288, -0.288, -0.26 ,  0.338,
+            0.338, -0.08 , -0.032, -0.032, -0.1  , -0.15 ,  0.15 ,  0.   ])
     >>> A.shape
     (20, 16)
     >>> np.linalg.matrix_rank(A.toarray())
@@ -791,8 +793,8 @@ def apcnls_qp_data(
     nvars = Kd1 + 1 + int(L_regularizer is not None)  # number of variables of QP
 
     regmat = None
-    if regularizer > 0.0:
-        regmat = regularizer * np.eye(d1)
+    if L_sum_regularizer > 0.0:
+        regmat = L_sum_regularizer * np.eye(d1)
         regmat[0, 0] = 0.0
 
     H_mats = []
@@ -810,6 +812,7 @@ def apcnls_qp_data(
         cellXX = np.dot(cellX.transpose(), cellX)
         if regmat is not None:
             cellXX += regmat
+        cellXX = triu(cellXX).tocsc()
         H_mats.append(cellXX)
         g_mats.append(-np.dot(cellX.transpose(), y[cell_j]))
         data = list(np.hstack([cellX, -cellX, -np.ones((cell_size, 1))]).flatten())
@@ -829,15 +832,16 @@ def apcnls_qp_data(
         V0, K, d, A_data, A_rows, A_cols, row_idx,
     )
 
-    H_mats.append(np.array([[n*V_regularizer]]))
+    H_mats.append(np.array([[n*v_regularizer]]))
     g_mats.append(np.array([0.0]))
     if L_regularizer is not None:
         H_mats.append(np.array([[n*L_regularizer]]))
         g_mats.append(np.array([0.0]))
 
     H = block_diag(H_mats, format='csc')
-    H = (H + H.transpose()) / 2.  # numerical stabilization of symmetry
+    H /= n
     g = np.concatenate(g_mats)
+    g /= n
     A = coo_matrix((A_data, (A_rows, A_cols)), shape=(row_idx, nvars)).tocsc()
 
     assert H.shape == (nvars, nvars), 'Invalid H.shape: {}'.format(H.shape)
