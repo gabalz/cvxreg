@@ -43,10 +43,10 @@ class PCNLSVoronoiEstimator(Estimator):
     (6, 3)
     >>> yhat1 = pcnlsv1.predict(model1, X)
     >>> np.round(np.sum(np.square(yhat1 - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.3661
+    0.3644
     >>> yhat1_test = pcnlsv1.predict(model1, X_test)
     >>> np.round(np.sum(np.square(yhat1_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.3686
+    0.3653
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(

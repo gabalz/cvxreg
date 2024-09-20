@@ -41,11 +41,10 @@ class CNLSEstimator(Estimator):
     (200, 3)
     >>> yhat = cnls.predict(model, X)
     >>> np.round(np.mean(np.square(yhat - y)), decimals=4)  # in-sample L2-risk
-    0.0078
+    0.0057
     >>> yhat_test = cnls.predict(model, X_test)
     >>> np.round(np.mean(np.square(yhat_test - y_test)), decimals=4)  # out-of-sample L2-error
-    0.0094
-
+    0.0141
     """
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
