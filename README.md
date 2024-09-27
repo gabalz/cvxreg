@@ -37,8 +37,8 @@ This Python library implements convex regression algorithms of various papers.
 > Near-Optimal Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
 > AISTATS, 2015
-([paper](http://jmlr.org/proceedings/papers/v38/balazs15.html),
-[MATLAB code](http://proceedings.mlr.press/v38/balazs15-supp.zip)).
+([paper](https://proceedings.mlr.press/v38/balazs15.html),
+[MATLAB code](https://proceedings.mlr.press/v38/balazs15-supp.zip)).
 
 **Adaptive Max-Affine Partitioning (AMAP)** \
 `algorithm/amap/amap.py`
@@ -46,7 +46,7 @@ This Python library implements convex regression algorithms of various papers.
 > Convex Regression: Theory, Practice, and Applications, Section 6.2.3, \
 > *Gabor Balazs,* \
 > PhD Thesis, University of Alberta, 2016
-([thesis](https://era.library.ualberta.ca/files/c7d278t254/Balazs_Gabor_201609_PhD.pdf),
+([thesis](https://doi.org/10.7939/R3T43J98B),
 [MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
 
 **Adaptively Partitioning Convex Nonparametric Least-Squares (APCNLS)** \
