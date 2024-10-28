@@ -27,7 +27,7 @@ class PCNLSEstimatorModel(EstimatorModel):
 
 def pcnls_train(
     X, y, partition,
-    regularizer=0.0, use_L=True, scale_L=1.0, ln_L=False, L=None, L_regularizer=None,
+    regularizer=0.0, use_L=True, scale_L=1.0, override_L=None, L=None, L_regularizer=None,
     backend=QP_BACKEND__DEFAULT,
     verbose=False, init_weights=None, init_dual_vars=None,
 ):
@@ -39,6 +39,7 @@ def pcnls_train(
     :param regularizer: ridge regularization parameter on the gradients
     :param use_L: use L if provided
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
+    :param override_L: use this L instead of the provided one
     :param L_regularizer: soft constraint scaler on Lipschitz constant
     :param backend: quadratic programming solver
     :param verbose: whether to print verbose output
@@ -59,8 +60,10 @@ def pcnls_train(
 
     if not use_L:
         L = None
-    elif ln_L:
-        L = np.log(n)
+    elif override_L is not None:
+        L = override_L
+    if isinstance(L, str):
+        L = eval(L)
 
     if isinstance(regularizer, str):
         regularizer = eval(regularizer)
