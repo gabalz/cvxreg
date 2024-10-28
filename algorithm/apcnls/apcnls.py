@@ -179,7 +179,7 @@ class APCNLSEstimatorModel(EstimatorModel):
 
 def apcnls_train(
     X, y,
-    L_sum_regularizer=0.0, use_L=False, L=None,
+    L_sum_regularizer=0.0, use_L=False, L=None, override_L=None,
     L_regularizer=None, L_regularizer_offset='AUTO',
     afpc_q=1, data_preprocess=False,
     use_V0=False, v_regularizer='AUTO',
@@ -194,6 +194,7 @@ def apcnls_train(
     :param L_sum_regularizer: ridge regularization parameter on the gradients (sum-grad)
     :param use_L: use L if provided
     :param L: maximum Lipschitz constant (as the max-norm of the gradients)
+    :param override_L: use this L instead of the provided one
     :param L_regularizer: soft constraint scaler on Lipschitz constant (max-grad)
     :param L_regularizer_offset: until this value the regularization should be zero
     :param afpc_q: scaling parameter for AFPC stopping rule
@@ -220,7 +221,9 @@ def apcnls_train(
 
     if not use_L:
         L = None
-    elif isinstance(L, str):
+    elif override_L is not None:
+        L = override_L
+    if isinstance(L, str):
         L = eval(L)
 
     if data_preprocess:
