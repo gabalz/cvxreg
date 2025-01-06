@@ -1,4 +1,7 @@
 
+import numpy as np
+
+
 class Estimator:
     """Abstract class of an estimator."""
     def __init__(self, train, predict):
@@ -21,3 +24,24 @@ class EstimatorModel:
         self.xscale = xscale
         self.yscale = yscale
         self.ymean = ymean
+
+
+def _const_train(X, y, **kwargs):
+    ymean = np.mean(y, axis=0)
+    assert len(ymean.shape) <= 2
+    return EstimatorModel(weights=None, ymean=ymean)
+
+
+def _const_predict(model, X, **kwargs):
+    ymean = model.ymean
+    assert len(ymean.shape) <= 2
+    if len(ymean.shape) == 2:
+        yhat = np.ones((X.shape[0], ymean.shape[1])) * ymean[None, :]
+    else:
+        yhat = np.ones(X.shape[0]) * ymean
+    return yhat
+
+
+class ConstEstimator(Estimator):
+    def __init__(self, train_args={}, predict_args={}):
+        Estimator.__init__(self, _const_train, _const_predict)
