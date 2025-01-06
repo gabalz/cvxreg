@@ -45,7 +45,7 @@ class SOCPResult:
 
 def socp_solve(
     H, g, A, b, cones,
-    maxiter='AUTO',
+    x0=None, maxiter='AUTO',
     backend=SOCP_BACKEND__DEFAULT,
     verbose=True,
 ):
@@ -53,11 +53,15 @@ def socp_solve(
 
         0.5*x'*H*x + g'*x, s.t. A*x + s = b, s in K.
 
+        K>=0 = {s : s >= 0}
+        Ksoc = {(s0, s1:) : ||s1:|| <= s0}
+
     :param H: objective symmetric positive semi-definite matrix
     :param g: objective vector
     :param A: constraint matrix
     :param b: constraint vector
     :param cones: list of cones
+    :param x0: starting point
     :param maxiter: maximum number of iterations
     :param backend: quadratic programming solver
     :param verbose: whether to print verbose output
@@ -71,20 +75,26 @@ def socp_solve(
         settings = clarabel.DefaultSettings()
         settings.verbose = (verbose > 0)
         settings.max_iter = maxiter
+        if x0 is not None:
+            b = b - A.dot(x0)
+            g = g + sparse.triu(H).dot(x0) + sparse.triu(H, 1).dot(x0)
         solver = clarabel.DefaultSolver(H, g, A, b, cones, settings)
         result = solver.solve()
         if verbose:
             print(f'status: {result.status}')
             if result.x is not None:
                 print('max(A*x-b): {}'.format((A.dot(result.x)-b).max()))
-        stat = result.status
         assert result.status in (clarabel.SolverStatus.Solved,
                                  clarabel.SolverStatus.AlmostSolved,
                                  clarabel.SolverStatus.MaxIterations,
                                  clarabel.SolverStatus.InsufficientProgress,
                                  clarabel.SolverStatus.MaxTime), f'status: {result.status}'
         primal_soln = np.array(result.x)
-        dual_soln = np.array(result.z)        
+        dual_soln = np.array(result.z)
+        stat = (result.status, result.iterations, result.obj_val, result.solve_time)
+        if x0 is not None:
+            primal_soln += x0
+            dual_soln = None
     else:
         raise NotImplementedError('Not supported backend: {}'.format(backend))
 
@@ -103,13 +113,33 @@ def socp_clarabel_test():
     ...                         [1., 1.]])
     >>> b1 = np.array([0., 1., 0.])
     >>> cones1 = [socp_nonnegative_cone(1, backend),
-    ...           socp_second_order_cone(2, backend)]
+    ...           socp_second_order_cone(2, backend)]  # |x| <= 1
     >>> r1 = socp_solve(H1, q1, A1, b1, cones1, backend=backend, verbose=False)
     >>> x1 = r1.primal_soln
     >>> np.round(x1, decimals=3)
     array([0., 1.])
     >>> np.round(r1.dual_soln, decimals=4)
     array([0.0001, 0.0001, 0.0001])
+    >>> r1.stat[:2]
+    (Solved, 13)
+
+    >>> r1b = socp_solve(H1, q1, A1, b1, cones1, x0=x1, backend=backend, verbose=False)
+    >>> x1b = r1b.primal_soln
+    >>> np.round(x1b, decimals=3)
+    array([0., 1.])
+    >>> r1b.dual_soln is None
+    True
+    >>> r1b.stat[:2]
+    (Solved, 12)
+
+    >>> r1c = socp_solve(H1, q1, A1, b1, cones1, x0=x1+0.001, backend=backend, verbose=False)
+    >>> x1c = r1c.primal_soln
+    >>> np.round(x1c, decimals=3)
+    array([0., 1.])
+    >>> r1c.dual_soln is None
+    True
+    >>> r1c.stat[:2]
+    (Solved, 11)
 
     >>> H2 = sparse.block_diag([np.zeros((4,4)), 2.0])
     >>> H2 = sparse.triu(H2).tocsc()

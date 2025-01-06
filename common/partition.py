@@ -4,7 +4,7 @@ from scipy.spatial import distance
 from common.distance import euclidean_distance, squared_distance
 
 
-def find_min_dist_centers(data, partition, dist=squared_distance):
+def find_min_dist_centers(data, partition, dist=squared_distance, op=np.max):
     """Find the centers minimizing the distance for a partition.
 
     :param data: data matrix (each row is a sample)
@@ -28,14 +28,17 @@ def find_min_dist_centers(data, partition, dist=squared_distance):
     [0. 1.]
     [0.]
     """
+    p = 1
     if dist == squared_distance:
         dist = 'sqeuclidean'
+        if op != np.max:
+            p = 2
 
     center_idxs = []
     for k in range(partition.ncells):
         cell = partition.cells[k]
         dists = distance.cdist(data[cell, :], data[cell, :], dist)
-        center_idxs.append(cell[np.argmin(np.max(dists, axis=1))])
+        center_idxs.append(cell[np.argmin(op(dists**p, axis=1))])
     return tuple(center_idxs)
 
 
