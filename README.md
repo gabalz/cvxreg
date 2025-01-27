@@ -92,8 +92,8 @@ PYTHONPATH=. pytest --doctest-modules common/ optim/ algorithm/
 ---------------------------------------------------------------------------------------------------
 # EXPERIMENTS
 
-There is a Jupyter notebook `ipynb/cvxreg_synt.ipynb`
-which provides basic experimenting on synthetic convex regression problems.
+There is a Jupyter notebook `ipynb/synthetic.ipynb`
+which provides basic experimenting on synthetic regression problems.
 
 ---------------------------------------------------------------------------------------------------
 # DEVELOPMENT SETUP
