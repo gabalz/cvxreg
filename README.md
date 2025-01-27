@@ -95,3 +95,10 @@ PYTHONPATH=. pytest --doctest-modules common/ optim/ algorithm/
 There is a Jupyter notebook `ipynb/cvxreg_synt.ipynb`
 which provides basic experimenting on synthetic convex regression problems.
 
+---------------------------------------------------------------------------------------------------
+# DEVELOPMENT SETUP
+
+git clone https://github.com/gabalz/cvxreg.git
+cd cvxreg
+git config core.hooksPath .githooks
+
