@@ -90,9 +90,9 @@ def plot_standard_stats(
 
 
 def __fake_test():
-    """"
+    """
     >>> print('fake test')
     fake test
-    """"
+    """
     pass
 
