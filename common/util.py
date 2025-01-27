@@ -19,7 +19,7 @@ def set_random_seed(seed):
            [0.20335322, 0.5258474 ]])
     """
     random.seed(seed)
-    np.random.seed(random.randint(0, 1e8))
+    np.random.seed(random.randint(0, int(1e8)))
 
 
 def rand_direction(n, d):

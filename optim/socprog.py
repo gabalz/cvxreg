@@ -8,6 +8,8 @@ SOCP_BACKEND__DEFAULT = SOCP_BACKEND__CLARABEL
 
 
 def convert_matrix_to_socp_solver_format(x, backend):
+    if x.getformat() == 'csc':
+        return x
     if backend in (SOCP_BACKEND__CLARABEL,):
         y = sparse.csc_matrix(x)
     else:
@@ -41,6 +43,34 @@ class SOCPResult:
         self.primal_soln = primal_soln
         self.dual_soln = dual_soln
         self.stat = stat
+
+
+def _check_socp_zero_feas(b, cones, backend):
+    idx_ineq = []
+    idx_soc = []
+    idx = 0
+    if backend == SOCP_BACKEND__CLARABEL:
+        import clarabel
+        for cone in cones:
+            idx_next = idx + cone.dim
+            idxs = list(range(idx, idx_next))
+            if isinstance(cone, clarabel.NonnegativeConeT):
+                idx_ineq += idxs
+            if isinstance(cone, clarabel.SecondOrderConeT):
+                idx_soc.append(idxs)
+            idx = idx_next
+        if len(idx_ineq) > 0:
+            idx_ineq = np.array(idx_ineq)
+            v_ineq = np.max(-b[idx_ineq])
+            v_ineq_idx = idx_ineq[np.argmax(-b[idx_ineq])]
+            v_ineq = -b[v_ineq_idx]
+            assert v_ineq < 1e-6, f'Not feasible x0, v_ineq: {v_ineq:.6f}, @idx: {v_ineq_idx}!'
+        if len(idx_soc) > 0:
+            for idx in idx_soc:
+                v_soc = np.linalg.norm(b[idx[1:]]) - b[idx[0]]
+                assert v_soc < 1e-6, f'Not feasible x0, v_soc: {v_soc}, @idx: {idx}!'
+    else:
+        raise NotImplementedError('Not supported backend: {}'.format(backend))
 
 
 def socp_solve(
@@ -77,6 +107,7 @@ def socp_solve(
         settings.max_iter = maxiter
         if x0 is not None:
             b = b - A.dot(x0)
+            _check_socp_zero_feas(b, cones, backend)
             g = g + sparse.triu(H).dot(x0) + sparse.triu(H, 1).dot(x0)
         solver = clarabel.DefaultSolver(H, g, A, b, cones, settings)
         result = solver.solve()
@@ -107,7 +138,7 @@ def socp_clarabel_test():
 
     >>> H1 = sparse.csc_matrix([[1., 1.], [1., 2.]])
     >>> H1 = sparse.triu(H1).tocsc()
-    >>> q1 = np.array([-1., -2.])
+    >>> q1 = np.array([-1., -3.])
     >>> A1 = sparse.csc_matrix([[-1., 0.],
     ...                         [0., 0.],
     ...                         [1., 1.]])
@@ -119,9 +150,9 @@ def socp_clarabel_test():
     >>> np.round(x1, decimals=3)
     array([0., 1.])
     >>> np.round(r1.dual_soln, decimals=4)
-    array([0.0001, 0.0001, 0.0001])
+    array([1., 1., 1.])
     >>> r1.stat[:2]
-    (Solved, 13)
+    (Solved, 7)
 
     >>> r1b = socp_solve(H1, q1, A1, b1, cones1, x0=x1, backend=backend, verbose=False)
     >>> x1b = r1b.primal_soln
@@ -130,16 +161,16 @@ def socp_clarabel_test():
     >>> r1b.dual_soln is None
     True
     >>> r1b.stat[:2]
-    (Solved, 12)
+    (Solved, 6)
 
-    >>> r1c = socp_solve(H1, q1, A1, b1, cones1, x0=x1+0.001, backend=backend, verbose=False)
+    >>> r1c = socp_solve(H1, q1, A1, b1, cones1, x0=x1*0.5, backend=backend, verbose=False)
     >>> x1c = r1c.primal_soln
     >>> np.round(x1c, decimals=3)
     array([0., 1.])
     >>> r1c.dual_soln is None
     True
     >>> r1c.stat[:2]
-    (Solved, 11)
+    (Solved, 6)
 
     >>> H2 = sparse.block_diag([np.zeros((4,4)), 2.0])
     >>> H2 = sparse.triu(H2).tocsc()

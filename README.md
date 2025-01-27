@@ -73,7 +73,7 @@ pip install numpy scipy osqp clarabel
 
 # Jupyter notebook (Optional):
 pip install joblib pandas 
-pip install widgetsnbextension jupyter matplotlib
+pip install widgetsnbextension jupyter matplotlib seaborn
 ```
 
 ---------------------------------------------------------------------------------------------------
