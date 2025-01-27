@@ -86,3 +86,12 @@ def plot_standard_stats(
         stat_dev_name=test_time_name+'__std',
         d=d, skipped_estimators=skipped_estimators,
     )
+
+
+def __fake_test():
+    """
+    >>> print('fake test')
+    fake test
+    """
+    pass
+
