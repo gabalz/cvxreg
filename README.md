@@ -86,12 +86,19 @@ All the doctests can be run by using the nose package:
 source .../pyenv/bin/activate  # if not done yet
 pip install pytest
 cd .../cvxreg  # go to the root directory of this project
-PYTHONPATH=. pytest --doctest-modules
+PYTHONPATH=. pytest --doctest-modules common/ optim/ algorithm/
 ```
 
 ---------------------------------------------------------------------------------------------------
 # EXPERIMENTS
 
-There is a Jupyter notebook `ipynb/cvxreg_synt.ipynb`
-which provides basic experimenting on synthetic convex regression problems.
+There is a Jupyter notebook `ipynb/synthetic.ipynb`
+which provides basic experimenting on synthetic regression problems.
+
+---------------------------------------------------------------------------------------------------
+# DEVELOPMENT SETUP
+
+git clone https://github.com/gabalz/cvxreg.git
+cd cvxreg
+git config core.hooksPath .githooks
 
