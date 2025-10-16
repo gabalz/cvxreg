@@ -34,6 +34,7 @@ def farthest_point_clustering(
     :param first_idx: decides how the first index is selected
     :return: partition represented by the sample indices (Partition object)
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> X = np.array(
     ...     [[1., 1.], [-1., 1.], [0., 1.],
     ...      [-1.5, 0.5], [0.5, -1.], [1., 1.5],
@@ -114,6 +115,7 @@ def adaptive_farthest_point_clustering(
     :param return_center_idxs: if True, center_idxs also returned
     :return: partition represented by the sample indices (Partition object)
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
     >>> X = np.random.randn(200, 2)

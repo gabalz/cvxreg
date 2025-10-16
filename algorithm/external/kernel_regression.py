@@ -63,6 +63,7 @@ class KernelRegEstimator(Estimator):
 
 def _kernel_reg_l2_loss_tests():
     """
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
 

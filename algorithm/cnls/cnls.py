@@ -19,6 +19,7 @@ def _cnls_train(X, y, **kwargs):
 class CNLSEstimator(Estimator):
     """Convex Nonparametric Least Squares (CNLS) estimator.
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
 

@@ -163,6 +163,7 @@ def pcnls_qp_data(
     :param backend: quadratic programming solver
     :return: QP parameters H, g, A, b, and the constraint row index for each cell
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.partition import singleton_partition
     >>> X = np.array([[1.1, 1.1], [-1.2, 1.2], [-1.3, -1.3], [0.4, 0.4], [1.5, -1.5]])
     >>> y = np.array([1.1, 1.2, 1.3, 0.4, 0.5])

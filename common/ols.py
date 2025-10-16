@@ -15,6 +15,7 @@ def _ols_train(X, y, **kwargs):
 class OLSEstimator(Estimator):
     """Ordinary Least-Squares (OLS) estimator.
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
 

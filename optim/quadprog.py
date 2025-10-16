@@ -73,11 +73,12 @@ def qp_solve(
             lb = -np.inf*np.ones(ub.shape)
         m.setup(
             P=H, q=g, A=A, l=lb, u=ub,
-            max_iter=maxiter, verbose=verbose, polish=True,
+            max_iter=maxiter, verbose=verbose,
+            polishing=True,
         )
         if x is not None:
             m.warm_start(x=x0, y=y0)
-        result = m.solve()
+        result = m.solve(raise_error=True)
         if verbose:
             print('status({}): {}'.format(result.info.status_val, result.info.status))
             if result.x is not None:
@@ -117,6 +118,7 @@ def qp_solve(
 
 def quadprog_osqp_test():
     """
+    >>> np.set_printoptions(legacy='1.25')
     >>> backend = QP_BACKEND__OSQP
 
     >>> H1 = np.array([[3., 1.], [1., 1.]]) * 2.0
@@ -165,6 +167,7 @@ def quadprog_osqp_test():
 
 def quadprog_clarabel_test():
     """
+    >>> np.set_printoptions(legacy='1.25')
     >>> backend = QP_BACKEND__CLARABEL
 
     >>> H1 = np.array([[3., 1.], [1., 1.]]) * 2.0

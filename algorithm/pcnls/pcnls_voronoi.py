@@ -21,6 +21,7 @@ def _pcnls_voronoi_train(X, y, **kwargs):
 class PCNLSVoronoiEstimator(Estimator):
     """PCNLS with uniformly drawn random Voronoi partition with K^{d/(d+4)} centers.
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
 

@@ -10,6 +10,7 @@ def set_random_seed(seed):
 
     :param seed: new random seed
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> set_random_seed(19)
     >>> random.randint(0, 10000)
     708
@@ -28,6 +29,8 @@ def rand_direction(n, d):
     :param n: number of random directions to generate
     :param d: dimension of the random direction vectors
     :return: matrix of random directions (size: n x d)
+
+    >>> np.set_printoptions(legacy='1.25')
 
     >>> set_random_seed(19)
     >>> x = rand_direction(10, 3)
