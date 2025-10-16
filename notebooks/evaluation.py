@@ -42,6 +42,7 @@ def plot_stats(
               color='gray', linestyle='--', zorder=1, alpha=0.5)
     if d is not None:
         title = title + f' (d = {d})'
+    ax.set_xticks(nsamples)
     ax.set(xlabel='number of samples ($n$)',
            ylabel=ylabel, title=title, ylim=(ymin, None))
 

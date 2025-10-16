@@ -89,7 +89,12 @@ def get_cv_k(X, y, k, cv, nkcands):
     cv_splits = list(KFold(n_splits=cv).split(X))
     for (train_inds, _) in cv_splits:
         trees.append(sp.spatial.cKDTree(X[train_inds, :], leafsize=100))
-    k_cands = [int(np.round(_k)) for _k in np.linspace(1, k, nkcands)]
+    if k <= nkcands:
+        k_cands = list(range(1, int(k)))
+    else:
+        k_cands = sorted(set([int(np.round(_k))
+                              for _k in np.linspace(1, k, nkcands)]))
+    assert len(k_cands) > 0, f'No k-NN candidates, k:{k}, nkcands:{nkcands}'
     k_mse = np.inf
     for k_cand in k_cands:
         k_cand_mse = _get_k_cv_mse(X, y, trees, k_cand, cv_splits)
@@ -102,6 +107,7 @@ def get_cv_k(X, y, k, cv, nkcands):
 
 def _knn_l2_loss_tests():
     """
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
 

@@ -4,6 +4,32 @@ from scipy.spatial import distance
 from common.distance import euclidean_distance, squared_distance
 
 
+def find_closest_centers(data, centers, dist=squared_distance):
+    """
+    :param data: data matrix (each row is a sample)
+    :param centers: center matrix (each row hold the data of a center point)
+    :param dist: distance function
+    :return: tuple of closest center indices
+
+    >>> np.set_printoptions(legacy='1.25')
+
+    >>> data = np.array(
+    ...     [[1., 1.], [-1., 1.], [0., 1.],
+    ...      [-1.5, 0.5], [0.5, -1.], [1., 1.5],
+    ...      [-1., -1.], [-2., -1], [0., 1.]],
+    ... )
+    >>> centers = np.array(
+    ...     [[0., 1.], [-2., -1]]
+    ... )
+    >>> find_closest_centers(data, centers)
+    (0, 0, 0, 0, 0, 0, 1, 1, 0)
+    """
+    if dist in (euclidean_distance, squared_distance):
+        _dist = 'sqeuclidean'
+    dists = distance.cdist(data, centers, _dist)
+    return tuple(np.argmin(dists, axis=1))
+
+
 def find_min_dist_centers(data, partition, dist=squared_distance, op=np.max):
     """Find the centers minimizing the distance for a partition.
 
@@ -11,6 +37,8 @@ def find_min_dist_centers(data, partition, dist=squared_distance, op=np.max):
     :param partition: partition represented by sample indices (Partition object)
     :param dist: distance function
     :return: tuple of center indices
+
+    >>> np.set_printoptions(legacy='1.25')
 
     >>> X = np.array(
     ...     [[1., 1.], [-1., 1.], [0., 1.],
@@ -27,18 +55,45 @@ def find_min_dist_centers(data, partition, dist=squared_distance, op=np.max):
     [1.   1.   0.   2.5  1.25 0.  ]
     [0. 1.]
     [0.]
-    """
-    p = 1
-    if dist == squared_distance:
-        dist = 'sqeuclidean'
-        if op != np.max:
-            p = 2
 
+    >>> X = np.array(
+    ...     [[1., 15.], [-5., 1.], [0., 30.],
+    ...      [-15, -1.5], [0.5, -1.], [-12., -1.5],
+    ...      [-1., -1.], [-1., -1], [0., 1.]],
+    ... )
+    >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
+    >>> centers = find_min_dist_centers(X, p, op=np.mean)
+    >>> centers
+    (1, 6, 4)
+    >>> centers = find_min_dist_centers(X, p, op=np.max)
+    >>> centers
+    (0, 6, 4)
+
+    >>> X = np.array(
+    ...     [[1., 115.], [-5., 1.], [0., -60.],
+    ...      [-115, -1.5], [0.5, -1.], [-121., -1.5],
+    ...      [-1., -1.], [-1., -1], [-15., 42.]],
+    ... )
+    >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
+    >>> centers = find_min_dist_centers(X, p, op=np.mean, dist=euclidean_distance)
+    >>> centers
+    (1, 6, 4)
+    >>> centers = find_min_dist_centers(X, p, op=np.mean)
+    >>> centers
+    (8, 6, 4)
+    >>> centers = find_min_dist_centers(X, p, op=np.max, dist=euclidean_distance)
+    >>> centers
+    (8, 6, 4)
+    """
+    if dist in (euclidean_distance, squared_distance):
+        _dist = 'sqeuclidean'
     center_idxs = []
     for k in range(partition.ncells):
         cell = partition.cells[k]
-        dists = distance.cdist(data[cell, :], data[cell, :], dist)
-        center_idxs.append(cell[np.argmin(op(dists**p, axis=1))])
+        dists = distance.cdist(data[cell, :], data[cell, :], _dist)
+        if op != np.max and dist == euclidean_distance:
+            np.sqrt(dists, out=dists)
+        center_idxs.append(cell[np.argmin(op(dists, axis=1))])
     return tuple(center_idxs)
 
 
@@ -51,6 +106,8 @@ def cell_radiuses(data, partition, centers=None, dist=euclidean_distance):
     :param dist: distance function
     :return: cell radiuses
 
+    >>> np.set_printoptions(legacy='1.25')
+
     >>> X = np.array(
     ...     [[1., 1.], [-1., 1.], [0., 1.],
     ...      [-1.5, 0.5], [0.5, -1.], [1., 1.5],
@@ -62,19 +119,13 @@ def cell_radiuses(data, partition, centers=None, dist=euclidean_distance):
     >>> tuple(np.round(cell_radiuses(X, p), decimals=4))
     (1.5811, 1.0, 0.0)
     """
-    if dist == euclidean_distance:
-        _dist = squared_distance
-    else:
-        _dist = dist
     if centers is None:
-        centers = data[find_min_dist_centers(data, partition, _dist), :]
+        centers = data[find_min_dist_centers(data, partition, dist), :]
     assert partition.ncells == centers.shape[0]
     r = tuple([
-        max(_dist(data[cell, :], centers[center_idx, :]))
+        max(dist(data[cell, :], centers[center_idx, :]))
         for cell, center_idx in zip(partition.cells, range(centers.shape[0]))
     ])
-    if dist == euclidean_distance:
-        r = tuple([np.sqrt(v) for v in r])
     return r
 
 
@@ -86,6 +137,8 @@ def voronoi_partition(centers, data, dist=squared_distance):
     :param data: data matrix (each row is a sample)
     :param dist: distance function
     :return: Partition object representing the Voronoi partition around the given centers
+
+    >>> np.set_printoptions(legacy='1.25')
 
     >>> centers = np.array([[1., 0.], [-1., 0.]])
     >>> data = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1]])
@@ -119,6 +172,7 @@ def rand_voronoi_partition(ncenters, data, dist=squared_distance):
     :param dist: distance function
     :return: Partition object representing the randomly created Voronoi partition
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
     
@@ -142,6 +196,8 @@ def max_affine_partition(data, maf):
     :param data: data matrix (each row is a sample)
     :param maf: max-affine function as a matrix (each row is an affine map [offset, slope])
     :returns: Partition object representing the induced partition
+
+    >>> np.set_printoptions(legacy='1.25')
 
     >>> data = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1], [0., 1.]])
     >>> maf = np.array([[1., 0.], [0., -1.], [-1., 1.]])
@@ -179,6 +235,8 @@ def singleton_partition(npoints):
 
     :param npoints: size of the partitioned set {0, 1, ..., npoints-1}
     :return: Partition object representing the singleton partition ([0], [1], ..., [npoints-1])
+
+    >>> np.set_printoptions(legacy='1.25')
 
     >>> p = singleton_partition(5)
     >>> p.npoints

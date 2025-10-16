@@ -69,11 +69,14 @@ source .../pyenv/bin/activate  # activating the virtual environment
 pip install --upgrade pip
 pip install --upgrade setuptools
 
-pip install numpy scipy osqp clarabel
+pip install numpy scipy osqp clarabel numba
+
+# For "external algorithms" (in algorithms/external):
+pip install scikit-learn scikit-fda xgboost
 
 # Jupyter notebook (Optional):
-pip install joblib pandas 
-pip install widgetsnbextension jupyter matplotlib seaborn
+pip install joblib pandas
+pip install widgetsnbextension jupyter matplotlib seaborn papermill
 ```
 
 ---------------------------------------------------------------------------------------------------

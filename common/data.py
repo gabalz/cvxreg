@@ -8,6 +8,7 @@ def shuffle_data(X, y):
     :param y: target vector
     :return: shuffled X, shuffled y, permutation
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
     >>> X = np.array([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]])
@@ -40,6 +41,7 @@ def normalize_data(X, y, tol=1e-6):
              mean vector of X, scaling vector of X,
              mean of y, scaler of y
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> X = np.array([[1, 2, 1], [1, 3, 1], [1, 4, 1], [1, 5, 1], [1, 6, 1]])
     >>> y = 2 + 3*X[:, 1]
     >>> y

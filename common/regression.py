@@ -35,6 +35,7 @@ def partition_predict(partition, model, X, extend_X1=True):
     :param extend_X1: whether or not to extend the data with leading 1s
     :return: predicted vector (one value for each sample)
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.partition import Partition
 
     >>> p = Partition(npoints=5, ncells=2, cells=(np.array([0, 3, 4]), np.array([1, 2])))
@@ -61,6 +62,8 @@ def max_affine_predict(model, X, extend_X1=True):
     :param extend_X1: whether or not to extend the data with leading 1s
     :return: predicted vector (one value for each sample)
 
+    >>> np.set_printoptions(legacy='1.25')
+
     >>> X = np.array([[1.1, 1.1], [-1.2, 1.2], [-1.3, -1.3], [0.4, 0.4], [1.5, -1.5]])
 
     >>> W = np.array([[1.0, 2.0, 3.0]])
@@ -86,6 +89,7 @@ def max_affine_fit_partition(partition, X, y, extend_X1=True, rcond=None):
     :param rcond: cut-off ratio for small singular values (see np.linalg.lstsq)
     :return: weight matrix (each row represents an OLS fit)
 
+    >>> np.set_printoptions(legacy='1.25')
     >>> from common.distance import squared_distance
     >>> from common.partition import Partition
 
@@ -117,6 +121,8 @@ def cv_indices(npoints, ncvfolds):
     :param npoints: number of data points
     :param ncvfolds: number of CV-folds
     :return sample indices of the test and train sets, respectively
+
+    >>> np.set_printoptions(legacy='1.25')
 
     >>> test, train = cv_indices(10, 4)
     >>> test
