@@ -28,7 +28,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [[ "${{ matrix.python-version }}" == "3.9" ]]; then
+            if [ -f requirements-3.9.txt ]; then pip install -r requirements-3.9.txt; fi
+        else
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        fi
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
