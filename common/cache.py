@@ -1,6 +1,8 @@
 
 import os
 import joblib
+import glob
+import shutil
 
 
 class ResultCache:
@@ -41,3 +43,25 @@ class ResultCache:
         return joblib.hashing.hash(joblib.func_inspect.filter_args(
             func, [], (), params,
         ))
+
+    def fix_func_code(self):
+        if self.cache_dir is None:
+            return
+
+        matches = glob.glob(os.path.join(self.cache_dir, "**", "func_code.py"), recursive=True)
+        if not matches:
+            raise Exception(f"Could not find any func_code.py under: {self.cache_dir}")
+        fcp = matches[0]
+        print(f"fix_func_code, fcp: {fcp}")
+
+        func_code_path = os.path.join("joblib", "jupyter_notebook", "run_experiment", "func_code.py")
+        for edir in os.listdir(self.cache_dir):
+            epath = os.path.join(self.cache_dir, edir)
+            if not os.path.isdir(epath):
+                continue
+
+            joblib_dir = os.path.join(epath, "joblib")
+            target_func_code = os.path.join(epath, func_code_path)
+            if os.path.exists(joblib_dir) and not os.path.exists(target_func_code):
+                print(f"fix_func_code, copy fcp to: {epath}")
+                shutil.copy2(fcp, target_func_code)
