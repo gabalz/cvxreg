@@ -120,7 +120,7 @@ def adaptive_farthest_point_clustering(
     >>> partition.ncells
     1
     >>> partition.cells
-    array([0, 1, 2, 3, 4, 5, 6])
+    (array([0, 1, 2, 3, 4, 5, 6]),)
 
     >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
@@ -164,7 +164,7 @@ def adaptive_farthest_point_clustering(
     n, d = data.shape
     data_radius = get_data_radius(data, dist)
     if data_radius < 1e-16:
-        partition = Partition(npoints=n, ncells=1, cells=np.arange(n))
+        partition = Partition(npoints=n, ncells=1, cells=(np.arange(n),))
         if return_center_idxs:
             return partition, [0]
         return partition
