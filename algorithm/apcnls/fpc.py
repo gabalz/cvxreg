@@ -115,6 +115,13 @@ def adaptive_farthest_point_clustering(
     :param return_center_idxs: if True, center_idxs also returned
     :return: partition represented by the sample indices (Partition object)
 
+    >>> X = np.zeros((7, 2))
+    >>> partition = adaptive_farthest_point_clustering(data=X)
+    >>> partition.ncells
+    1
+    >>> partition.cells
+    (array([0, 1, 2, 3, 4, 5, 6]),)
+
     >>> np.set_printoptions(legacy='1.25')
     >>> from common.util import set_random_seed
     >>> set_random_seed(19)
@@ -156,6 +163,11 @@ def adaptive_farthest_point_clustering(
     """
     n, d = data.shape
     data_radius = get_data_radius(data, dist)
+    if data_radius < 1e-16:
+        partition = Partition(npoints=n, ncells=1, cells=(np.arange(n),))
+        if return_center_idxs:
+            return partition, [0]
+        return partition
     center_idxs = [_fpc_first_center_idx(data, first_idx, dist)]
 
     q2 = 2*q
