@@ -37,10 +37,10 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test the core
       run: |
-        PYTHONPATH=. pytest --doctest-modules common/ optim/ algorithm/
-    - name: Install all dependencies
+        PYTHONPATH=. pytest --doctest-modules ai/gandg/common/ ai/gandg/optim/ ai/gandg/algorithm/
+    - name: Install notebook dependencies
       run: |
         python -m pip install joblib pandas matplotlib seaborn
-    - name: Test all
+    - name: Test notebooks
       run: |
-        PYTHONPATH=. pytest --doctest-modules
+        PYTHONPATH=. pytest --doctest-modules ai/gandg/notebooks

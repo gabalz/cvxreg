@@ -6,21 +6,31 @@ This Python library implements convex regression algorithms of various papers.
 ----------------------------------------------------------------------------------------------------
 # ALGORITHMS
 
-**Convex Nonparametric Least-Squares (CNLS)** \
-`algorithm/cnls/cnls.py`
+**Adaptively Partitioning Convex Nonparametric Least-Squares (APCNLS)** \
+`algorithm/apcnls/apcnls.py`
 
-> Convex Optimization, Section 6.5.5, \
-> *Stephen Boyd, Lieven Vandenberghe,* \
-> Cambridge University Press, 2004
-([book](https://web.stanford.edu/~boyd/cvxbook/)).
+> Adaptively Partitioning Max-Affine Estimators for Convex Regression, \
+> *Gabor Balazs,* \
+> AISTATS, 2022
+([paper](https://proceedings.mlr.press/v151/balazs22a.html)).
 
-**Least-Squares Partition Algorithm (LSPA)** \
-`algorithm/lspa/lspa.py`
+**Adaptive Max-Affine Partitioning (AMAP)** \
+`algorithm/amap/amap.py`
 
-> Convex Piecewise-Linear Fitting, \
-> *Alessandro Magnani, Stephen P. Boyd,* \
-> Optimization and Engineering, vol.10, 2009
-([paper](https://web.stanford.edu/~boyd/papers/pdf/cvx_pwl_fit.pdf)).
+> Convex Regression: Theory, Practice, and Applications, Section 6.2.3, \
+> *Gabor Balazs,* \
+> PhD Thesis, University of Alberta, 2016
+([thesis](https://era.library.ualberta.ca/files/c7d278t254/Balazs_Gabor_201609_PhD.pdf),
+[MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
+
+**Partitioning Convex Nonparametric Least-Squares (PCNLS) with uniformly random Voronoi partition** \
+`algorithm/pcnls/pcnls_voronoi.py`
+
+> Near-Optimal Max-Affine Estimators for Convex Regression, \
+> *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
+> AISTATS, 2015
+([paper](http://jmlr.org/proceedings/papers/v38/balazs15.html),
+[MATLAB code](http://proceedings.mlr.press/v38/balazs15-supp.zip)).
 
 **Convex Adaptive Partitioning (CAP), and FastCAP** \
 `algorithm/cap/cap.py`
@@ -31,31 +41,21 @@ This Python library implements convex regression algorithms of various papers.
 ([paper](https://www.jmlr.org/papers/v14/hannah13a.html),
 [MATLAB code](https://github.com/laurenahannah/convex-function))
 
-**Partitioning Convex Nonparametric Least-Squares (PCNLS) with uniformly random Voronoi partition** \
-`algorithm/pcnls/pcnls_voronoi.py`
+**Least-Squares Partition Algorithm (LSPA)** \
+`algorithm/lspa/lspa.py`
 
-> Near-Optimal Max-Affine Estimators for Convex Regression, \
-> *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
-> AISTATS, 2015
-([paper](https://proceedings.mlr.press/v38/balazs15.html),
-[MATLAB code](https://proceedings.mlr.press/v38/balazs15-supp.zip)).
+> Convex Piecewise-Linear Fitting, \
+> *Alessandro Magnani, Stephen P. Boyd,* \
+> Optimization and Engineering, vol.10, 2009
+([paper](https://web.stanford.edu/~boyd/papers/pdf/cvx_pwl_fit.pdf)).
 
-**Adaptive Max-Affine Partitioning (AMAP)** \
-`algorithm/amap/amap.py`
+**Convex Nonparametric Least-Squares (CNLS)** \
+`algorithm/cnls/cnls.py`
 
-> Convex Regression: Theory, Practice, and Applications, Section 6.2.3, \
-> *Gabor Balazs,* \
-> PhD Thesis, University of Alberta, 2016
-([thesis](https://doi.org/10.7939/R3T43J98B),
-[MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
-
-**Adaptively Partitioning Convex Nonparametric Least-Squares (APCNLS)** \
-`algorithm/apcnls/apcnls.py`
-
-> Adaptively Partitioning Max-Affine Estimators for Convex Regression, \
-> *Gabor Balazs,* \
-> AISTATS, 2022
-([paper](https://proceedings.mlr.press/v151/balazs22a.html)).
+> Convex Optimization, Section 6.5.5, \
+> *Stephen Boyd, Lieven Vandenberghe,* \
+> Cambridge University Press, 2004
+([book](https://web.stanford.edu/~boyd/cvxbook/)).
 
 ----------------------------------------------------------------------------------------------------
 # PYTHON ENVIRONMENT
@@ -101,7 +101,9 @@ which provides basic experimenting on synthetic regression problems.
 ---------------------------------------------------------------------------------------------------
 # DEVELOPMENT SETUP
 
+```bash
 git clone https://github.com/gabalz/cvxreg.git
 cd cvxreg
 git config core.hooksPath .githooks
+```
 
