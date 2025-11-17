@@ -17,3 +17,11 @@ def logging_setup():
 
 def info(*args):
     logging.info('PID:{}|'.format(os.getpid()) + args[0] + '\n', *args[1:])
+
+
+def _empty_test():
+    """
+    >>> print("I am needed!")  # Needed for pytest to ensure it finds a test and returns with success.
+    I am needed!
+    """
+    pass
