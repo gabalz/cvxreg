@@ -1,13 +1,13 @@
 [![Build](https://github.com/gabalz/cvxreg/actions/workflows/python-package.yml/badge.svg)](https://github.com/gabalz/cvxreg/actions/workflows/python-package.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This Python library implements convex regression algorithms of various papers.
+This Python library implements convex and delta-convex regression algorithms of various papers.
 
 ----------------------------------------------------------------------------------------------------
 # ALGORITHMS
 
 **Adaptively Partitioning Convex Nonparametric Least-Squares (APCNLS)** \
-`algorithm/apcnls/apcnls.py`
+`ai/gandg/algorithm/apcnls/apcnls.py`
 
 > Adaptively Partitioning Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs,* \
@@ -15,7 +15,7 @@ This Python library implements convex regression algorithms of various papers.
 ([paper](https://proceedings.mlr.press/v151/balazs22a.html)).
 
 **Adaptive Max-Affine Partitioning (AMAP)** \
-`algorithm/amap/amap.py`
+`ai/gandg/algorithm/amap/amap.py`
 
 > Convex Regression: Theory, Practice, and Applications, Section 6.2.3, \
 > *Gabor Balazs,* \
@@ -24,7 +24,7 @@ This Python library implements convex regression algorithms of various papers.
 [MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
 
 **Partitioning Convex Nonparametric Least-Squares (PCNLS) with uniformly random Voronoi partition** \
-`algorithm/pcnls/pcnls_voronoi.py`
+`ai/gandg/algorithm/pcnls/pcnls_voronoi.py`
 
 > Near-Optimal Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
@@ -33,7 +33,7 @@ This Python library implements convex regression algorithms of various papers.
 [MATLAB code](http://proceedings.mlr.press/v38/balazs15-supp.zip)).
 
 **Convex Adaptive Partitioning (CAP), and FastCAP** \
-`algorithm/cap/cap.py`
+`ai/gandg/algorithm/cap/cap.py`
 
 > Multivariate Convex Regression with Adaptive Partitioning, \
 > *Lauren A. Hannah, David B. Dunson,* \
@@ -42,7 +42,7 @@ This Python library implements convex regression algorithms of various papers.
 [MATLAB code](https://github.com/laurenahannah/convex-function))
 
 **Least-Squares Partition Algorithm (LSPA)** \
-`algorithm/lspa/lspa.py`
+`ai/gandg/algorithm/lspa/lspa.py`
 
 > Convex Piecewise-Linear Fitting, \
 > *Alessandro Magnani, Stephen P. Boyd,* \
@@ -50,7 +50,7 @@ This Python library implements convex regression algorithms of various papers.
 ([paper](https://web.stanford.edu/~boyd/papers/pdf/cvx_pwl_fit.pdf)).
 
 **Convex Nonparametric Least-Squares (CNLS)** \
-`algorithm/cnls/cnls.py`
+`ai/gandg/algorithm/cnls/cnls.py`
 
 > Convex Optimization, Section 6.5.5, \
 > *Stephen Boyd, Lieven Vandenberghe,* \
@@ -71,7 +71,7 @@ pip install --upgrade setuptools
 
 pip install numpy scipy osqp clarabel numba
 
-# For "external algorithms" (in algorithms/external):
+# For "external algorithms" (in ai/gandg/algorithms/external):
 pip install scikit-learn scikit-fda xgboost
 
 # Jupyter notebook (Optional):
@@ -89,7 +89,7 @@ All the doctests can be run by using the nose package:
 source .../pyenv/bin/activate  # if not done yet
 pip install pytest
 cd .../cvxreg  # go to the root directory of this project
-PYTHONPATH=. pytest --doctest-modules common/ optim/ algorithm/
+PYTHONPATH=. pytest --doctest-modules ai/
 ```
 
 ---------------------------------------------------------------------------------------------------
