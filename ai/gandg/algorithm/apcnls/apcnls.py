@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from functools import partial
 from timeit import default_timer as timer
@@ -143,7 +142,7 @@ class APCNLSEstimator(Estimator):
             self,
             train=partial(apcnls_train, **train_args),
             predict=partial(max_affine_predict, **predict_args),
-        )    
+        )
 
 
 class APCNLSEstimatorModel(EstimatorModel):
@@ -175,6 +174,47 @@ class APCNLSEstimatorModel(EstimatorModel):
         self.proj_obj_val = proj_obj_val
         self.max_viol = max_viol
         self.dual_vars = dual_vars
+
+
+def _data_preprocess(X, y):
+    xmean = np.mean(X)
+    X = X - xmean
+    xscale = np.sqrt(np.max(np.sum(np.square(X), axis=1)))
+    X /= xscale
+    ymean = np.mean(y)
+    y = y - ymean
+    yscale = np.max(abs(y))
+    y /= yscale
+    return X, y, xmean, xscale, ymean, yscale
+
+
+def _parse_params(
+    L_sum_regularizer, L_regularizer,
+    L_regularizer_offset, v_regularizer,
+    X, K, afpc_eps,
+):
+    n, d = X.shape
+    afpc_eps  # might be used within the following evals
+
+    x_radius = get_data_radius(X)
+    if L_sum_regularizer == 'AUTO':
+        L_sum_regularizer = x_radius**2 * (d/n)
+    elif isinstance(L_sum_regularizer, str):
+        L_sum_regularizer = eval(L_sum_regularizer)
+    if L_regularizer == 'AUTO':
+        L_regularizer = max(1.0, x_radius)**2 * (K/n)
+    elif isinstance(L_regularizer, str):
+        L_regularizer = eval(L_regularizer)
+    if L_regularizer_offset == 'AUTO':
+        L_regularizer_offset = np.log(n)
+    elif isinstance(L_regularizer_offset, str):
+        L_regularizer_offset = eval(L_regularizer_offset)
+    if v_regularizer == 'AUTO':
+        v_regularizer = d * np.log(n)
+    elif isinstance(v_regularizer, str):
+        v_regularizer = eval(v_regularizer)
+
+    return L_sum_regularizer, L_regularizer, L_regularizer_offset, v_regularizer
 
 
 def apcnls_train(
@@ -227,14 +267,7 @@ def apcnls_train(
         L = eval(L)
 
     if data_preprocess:
-        xmean = np.mean(X)
-        X = X - xmean
-        xscale = np.sqrt(np.max(np.sum(np.square(X), axis=1)))
-        X /= xscale
-        ymean = np.mean(y)
-        y = y - ymean
-        yscale = np.max(abs(y))
-        y /= yscale
+        X, y, xmean, xscale, ymean, yscale = _data_preprocess(X, y)
     else:
         xmean = xscale = None
         ymean = yscale = None
@@ -242,26 +275,15 @@ def apcnls_train(
     start = timer()
     partition = adaptive_farthest_point_clustering(data=X, q=afpc_q)
     K = float(partition.ncells)
-    afpc_eps = partition_radius = max(cell_radii(X, partition))
     afpc_seconds = timer() - start
 
-    x_radius = get_data_radius(X)
-    if L_sum_regularizer == 'AUTO':
-        L_sum_regularizer = x_radius**2 * (d/n)
-    elif isinstance(L_sum_regularizer, str):
-        L_sum_regularizer = eval(L_sum_regularizer)
-    if L_regularizer == 'AUTO':
-        L_regularizer = max(1.0, x_radius)**2 * (K/n)
-    elif isinstance(L_regularizer, str):
-        L_regularizer = eval(L_regularizer)
-    if L_regularizer_offset == 'AUTO':
-        L_regularizer_offset = np.log(n)
-    elif isinstance(L_regularizer_offset, str):
-        L_regularizer_offset = eval(L_regularizer_offset)
-    if v_regularizer == 'AUTO':
-        v_regularizer = d * np.log(n)
-    elif isinstance(v_regularizer, str):
-        v_regularizer = eval(v_regularizer)
+    partition_radius = max(cell_radii(X, partition))
+    (L_sum_regularizer, L_regularizer,
+     L_regularizer_offset, v_regularizer) = _parse_params(
+         L_sum_regularizer, L_regularizer,
+         L_regularizer_offset, v_regularizer,
+         X, K, afpc_eps=partition_radius,
+    )
 
     start = timer()
     V0 = None if L is None or not use_V0 else 2*L*partition_radius
@@ -340,21 +362,21 @@ def _add_L_V0_to_Ab(L, L_regularizer, L_regularizer_offset,
     if L is not None:
         for k in range(K):
             col0 = k * d1 + 1
-            for l in range(d):
+            for ll in range(d):
                 A_data += [1.0, -1.0]
                 A_rows += [row_idx, row_idx + 1]
                 row_idx += 2
-                col = col0 + l
+                col = col0 + ll
                 A_cols += [col, col]
     elif L_regularizer is not None:
         Kd1 = K * d1
         for k in range(K):
             col0 = k * d1 + 1
-            for l in range(d):
+            for ll in range(d):
                 A_data += [1.0, -1.0, -1.0, -1.0]
                 A_rows += [row_idx, row_idx, row_idx+1, row_idx+1]
                 row_idx += 2
-                col = col0 + l
+                col = col0 + ll
                 A_cols += [col, Kd1+1, col, Kd1+1]
     L_shift = 0
     row_idx_2 = row_idx

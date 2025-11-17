@@ -179,7 +179,7 @@ def rand_voronoi_partition(ncenters, data, dist=squared_distance):
     >>> np.set_printoptions(legacy='1.25')
     >>> from ai.gandg.common.util import set_random_seed
     >>> set_random_seed(19)
-    
+
     >>> data = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1], [0., 1.]])
     >>> partition = rand_voronoi_partition(2, data)
     >>> partition.npoints
@@ -280,7 +280,7 @@ class Partition(object):
 
     def cell_sizes(self):
         """Returns the number of elements in each cell.
-        
+
         :return: integer tuple representing the cell sizes
         """
         sizes = []
@@ -290,7 +290,7 @@ class Partition(object):
 
     def cell_indices(self):
         """Returns the cell index for each element of the partitioned set.
-        
+
         :return: integer array representing the cell index of each element
         """
         idx = np.empty(self.npoints, dtype=int)

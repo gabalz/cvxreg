@@ -235,17 +235,17 @@ def _collect_stat_keys_and_values(results, estimator_name):
 
 def collect_estimator_stats(
     estimator_name, results,
-    skipped_stats = (
+    skipped_stats=(
         'd', 'n', 'run', 'estimator_name',
         'model', 'L_true', 'L_est',
     ),
-    stat_funcs = OrderedDict((
+    stat_funcs=OrderedDict((
         ('mean', np.mean),
         ('std', np.std),
         ('min', np.min),
         ('median', np.median),
         ('max', np.max),
-    )),    
+    )),
 ):
     stat_keys, stat_values = _collect_stat_keys_and_values(results, estimator_name)
     stat = {}

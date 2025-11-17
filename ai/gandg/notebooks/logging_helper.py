@@ -7,7 +7,7 @@ def logging_setup():
     logging.basicConfig(
         handlers=(
             # logging.FileHandler('.../file.log'),
-        logging.StreamHandler(sys.stdout),
+            logging.StreamHandler(sys.stdout),
         ),
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S',

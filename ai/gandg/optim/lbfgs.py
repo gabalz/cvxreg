@@ -67,9 +67,9 @@ class LBFGS:
 
         x = x0.copy()
         fval = task.fun(x)
-        assert np.array_equiv(x, x0), f'Argument of task.fun changes!'
+        assert np.array_equiv(x, x0), 'Argument of task.fun changes!'
         grad = task.jac(x)
-        assert np.array_equiv(x, x0), f'Argument of task.jac changes!'
+        assert np.array_equiv(x, x0), 'Argument of task.jac changes!'
 
         xnorm = np.linalg.norm(x)
         gnorm = np.linalg.norm(grad)
@@ -154,7 +154,7 @@ def _calc_lbfgs_search_dir(p, grad, mem_pos, mem_size, gamma,
     p[:] = -grad
     i = mem_pos
     for _ in range(mem_size):
-        i -= 1;
+        i -= 1
         if i < 0:
             i = max_memory - 1
         t_arr[i] = r_arr[i] * np.sum(p * s_arr[:, i])

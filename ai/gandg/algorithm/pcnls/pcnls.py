@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from timeit import default_timer as timer
 from scipy.sparse import block_diag, coo_matrix
@@ -123,21 +122,21 @@ def _add_L_to_Ab(L, L_regularizer, K, d, A_data, A_rows, A_cols, row_idx):
     if L is not None:
         for k in range(K):
             col0 = k * d1 + 1
-            for l in range(d):
+            for ll in range(d):
                 A_data += [1.0, -1.0]
                 A_rows += [row_idx, row_idx + 1]
                 row_idx += 2
-                col = col0 + l
+                col = col0 + ll
                 A_cols += [col, col]
     elif L_regularizer is not None:
         Kd1 = K*d1
         for k in range(K):
             col0 = k * d1 + 1
-            for l in range(d):
+            for ll in range(d):
                 A_data += [1.0, -1.0, -1.0, -1.0]
                 A_rows += [row_idx, row_idx, row_idx+1, row_idx+1]
                 row_idx += 2
-                col = col0 + l
+                col = col0 + ll
                 A_cols += [col, Kd1, col, Kd1]
 
     b = np.zeros(row_idx)
@@ -170,10 +169,10 @@ def pcnls_qp_data(
     >>> y = np.array([1.1, 1.2, 1.3, 0.4, 0.5])
     >>> p = singleton_partition(len(y))
     >>> H, g, A, b, cell_idx = pcnls_qp_data(X, y, p, regularizer=0.1)
- 
+
     >>> cell_idx
     array([ 0,  4,  8, 12, 16])
-        
+
     >>> H.shape
     (15, 15)
     >>> np.linalg.matrix_rank(H.toarray())

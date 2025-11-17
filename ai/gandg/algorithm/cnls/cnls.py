@@ -1,4 +1,3 @@
-import numpy as np
 from functools import partial
 
 from ai.gandg.common.estimator import Estimator
@@ -18,6 +17,7 @@ def _cnls_train(X, y, **kwargs):
 class CNLSEstimator(Estimator):
     """Convex Nonparametric Least Squares (CNLS) estimator.
 
+    >>> import numpy as np
     >>> np.set_printoptions(legacy='1.25')
     >>> from ai.gandg.common.util import set_random_seed
     >>> set_random_seed(19)

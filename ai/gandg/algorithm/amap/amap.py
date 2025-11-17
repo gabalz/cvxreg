@@ -194,7 +194,7 @@ def amap_train(
 
     X = np.insert(X, 0, 1.0, axis=1)  # augmenting the data with leading 1s
     betaI = ridge_regularizer * np.eye(d+1)
-    betaI[0,0] = 0.0  # do not regularize the bias term
+    betaI[0, 0] = 0.0  # do not regularize the bias term
     tlimit = np.ceil(n**(d/(d+4)))
 
     # Initialization.

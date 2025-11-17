@@ -3,7 +3,6 @@ import scipy as sp
 from functools import partial
 from sklearn.model_selection import KFold
 
-from ai.gandg.common.util import eprint
 from ai.gandg.common.estimator import Estimator
 from ai.gandg.algorithm.apcnls.fpc import (
     adaptive_farthest_point_clustering,

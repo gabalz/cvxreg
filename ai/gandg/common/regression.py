@@ -128,9 +128,9 @@ def cv_indices(npoints, ncvfolds):
     >>> test
     [array([0, 1]), array([2, 3, 4]), array([5, 6]), array([7, 8, 9])]
     >>> train  # doctest:+NORMALIZE_WHITESPACE
-    [array([2, 3, 4, 5, 6, 7, 8, 9]), 
-     array([0, 1, 5, 6, 7, 8, 9]), 
-     array([0, 1, 2, 3, 4, 7, 8, 9]), 
+    [array([2, 3, 4, 5, 6, 7, 8, 9]),
+     array([0, 1, 5, 6, 7, 8, 9]),
+     array([0, 1, 2, 3, 4, 7, 8, 9]),
      array([0, 1, 2, 3, 4, 5, 6])]
     """
     assert npoints >= ncvfolds

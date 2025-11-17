@@ -59,7 +59,7 @@ def _eval_cap_split(
     cand_XWk = cand_XW[:, k]
     cand_XW[:, k] = X1.dot(cand_W[:, k])
     cand_XW[:, K] = X1.dot(cand_W[:, K])
-                    
+
     err = _cap_loss(y, np.max(cand_XW, axis=1))
     if err < best_cand_err:
         best_cand_err = err
@@ -124,7 +124,7 @@ def cap_train(
 
     X1 = np.insert(X, 0, 1.0, axis=1)  # augmenting the data with leading 1s
     betaI = ridge_regularizer * np.eye(d+1)
-    betaI[0,0] = 0.0  # do not regularize the bias term
+    betaI[0, 0] = 0.0  # do not regularize the bias term
 
     P = Partition(npoints=n, ncells=1, cells=(np.array(range(n)),))
     W = _cap_fit(X1, y, betaI)[:, np.newaxis]
@@ -134,6 +134,7 @@ def cap_train(
     model_gcv_err = _cap_gcv_err(XW, y, d, P)
     gcv_miss = 0
     niter = 0
+    common_params = (d, X1, y, betaI, jitter_tol, mincellsize, nknots)
     while max(P.cell_sizes()) >= 2*mincellsize and n > (P.ncells+1)*(d+1):
         niter += 1
 
@@ -149,74 +150,18 @@ def cap_train(
                 continue  # splitting this cell is not possible
 
             Xcell = X[cell, :]
-            ycell = y[cell]
-            
             if nranddirs <= 0:  # CAP splitting along canonical directions
-                for dim in range(d):
-                    Xcelld = Xcell[:, dim]
-                    Xcelld, xmin, xmax = _cap_jitter_fix(
-                        Xcelld, np.min(Xcelld), np.max(Xcelld), jitter_tol,
-                    )
-                    has_found_valid_knot = False
-                    for knot in range(nknots):
-                        b = xmin + (float(knot)/(nknots-1)) * (xmax - xmin)
-                        is_valid, cell_le, cell_gt = _cap_split(cell, Xcelld, b, mincellsize)
-                        if not is_valid:
-                            continue
-
-                        has_found_valid_knot = True
-                        (cand_W, cand_XW, best_cand_err,
-                         best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
-                             P, X1, y, betaI, k, cell_le, cell_gt,
-                             cand_W, cand_XW, best_cand_err,
-                             best_cand_W, best_cand_XW, best_cand_P,
-                        )
-                    if not has_found_valid_knot:  # split by the median if nothing else worked
-                        b = np.median(Xcelld)
-                        is_valid, cell_le, cell_gt = _cap_split(cell, Xcelld, b, mincellsize)
-                        if not is_valid:
-                            continue
-
-                        (cand_W, cand_XW, best_cand_err,
-                         best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
-                             P, X1, y, betaI, k, cell_le, cell_gt,
-                             cand_W, cand_XW, best_cand_err,
-                             best_cand_W, best_cand_XW, best_cand_P,
-                         )
+                (cand_W, cand_XW, best_cand_err,
+                 best_cand_W, best_cand_XW, best_cand_P) = _find_best_cap_split(
+                     cand_W, cand_XW, best_cand_err,
+                     best_cand_W, best_cand_XW, best_cand_P,
+                     k, cell, Xcell, P, common_params)
             else:  # FastCAP splitting along random directions
-                G = rand_direction(nranddirs, d)
-                for iranddir in range(nranddirs):
-                    g = G[iranddir, :]
-                    Xcellg = Xcell.dot(g)
-                    Xcellg, xmin, xmax = _cap_jitter_fix(
-                        Xcellg, np.min(Xcellg), np.max(Xcellg), jitter_tol,
-                    )
-                    has_found_valid_knot = False
-                    for knot in range(nknots):
-                        b = xmin + (float(knot)/(nknots-1)) * (xmax - xmin)
-                        is_valid, cell_le, cell_gt = _cap_split(cell, Xcellg, b, mincellsize)
-                        if not is_valid:
-                            continue
-
-                        has_found_valid_knot = True
-                        (cand_W, cand_XW, best_cand_err,
-                         best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
-                             P, X1, y, betaI, k, cell_le, cell_gt,
-                             cand_W, cand_XW, best_cand_err,
-                             best_cand_W, best_cand_XW, best_cand_P,
-                        )
-                    if not has_found_valid_knot:  # split by the median if nothing else worked
-                        b = np.median(Xcellg)
-                        is_valid, cell_le, cell_gt = _cap_split(cell, Xcellg, b, mincellsize)
-                        if not is_valid:
-                            continue
-
-                        (cand_W, cand_XW, best_cand_err,
-                         best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
-                             P, X1, y, betaI, k, cell_le, cell_gt,
-                             cand_W, cand_XW, best_cand_err,
-                             best_cand_W, best_cand_XW, best_cand_P,
-                         )
+                (cand_W, cand_XW, best_cand_err,
+                 best_cand_W, best_cand_XW, best_cand_P) = _find_best_fastcap_split(
+                     cand_W, cand_XW, best_cand_err,
+                     best_cand_W, best_cand_XW, best_cand_P,
+                     k, cell, Xcell, P, nranddirs, common_params)
 
         # Attempt to refit the best candidate.
         P = best_cand_P
@@ -240,6 +185,84 @@ def cap_train(
             break  # stop if GCV does not improve for a while
 
     return CAPEstimatorModel(weights=model.T, gcv_error=model_gcv_err, niter=niter)
+
+
+def _find_best_cap_split(cand_W, cand_XW, best_cand_err,
+                         best_cand_W, best_cand_XW, best_cand_P,
+                         k, cell, Xcell, P, common_params):
+    d, X1, y, betaI, jitter_tol, mincellsize, nknots = common_params
+    for dim in range(d):
+        Xcelld = Xcell[:, dim]
+        Xcelld, xmin, xmax = _cap_jitter_fix(
+            Xcelld, np.min(Xcelld), np.max(Xcelld), jitter_tol,
+        )
+        has_found_valid_knot = False
+        for knot in range(nknots):
+            b = xmin + (float(knot)/(nknots-1)) * (xmax - xmin)
+            is_valid, cell_le, cell_gt = _cap_split(cell, Xcelld, b, mincellsize)
+            if not is_valid:
+                continue
+
+            has_found_valid_knot = True
+            (cand_W, cand_XW, best_cand_err,
+             best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
+                 P, X1, y, betaI, k, cell_le, cell_gt,
+                 cand_W, cand_XW, best_cand_err,
+                 best_cand_W, best_cand_XW, best_cand_P)
+        if not has_found_valid_knot:  # split by the median if nothing else worked
+            b = np.median(Xcelld)
+            is_valid, cell_le, cell_gt = _cap_split(cell, Xcelld, b, mincellsize)
+            if not is_valid:
+                continue
+
+            (cand_W, cand_XW, best_cand_err,
+             best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
+                 P, X1, y, betaI, k, cell_le, cell_gt,
+                 cand_W, cand_XW, best_cand_err,
+                 best_cand_W, best_cand_XW, best_cand_P)
+    return (
+        cand_W, cand_XW, best_cand_err,
+        best_cand_W, best_cand_XW, best_cand_P)
+
+
+def _find_best_fastcap_split(cand_W, cand_XW, best_cand_err,
+                             best_cand_W, best_cand_XW, best_cand_P,
+                             k, cell, Xcell, P, nranddirs, common_params):
+    d, X1, y, betaI, jitter_tol, mincellsize, nknots = common_params
+    G = rand_direction(nranddirs, d)
+    for iranddir in range(nranddirs):
+        g = G[iranddir, :]
+        Xcellg = Xcell.dot(g)
+        Xcellg, xmin, xmax = _cap_jitter_fix(
+            Xcellg, np.min(Xcellg), np.max(Xcellg), jitter_tol,
+        )
+        has_found_valid_knot = False
+        for knot in range(nknots):
+            b = xmin + (float(knot)/(nknots-1)) * (xmax - xmin)
+            is_valid, cell_le, cell_gt = _cap_split(cell, Xcellg, b, mincellsize)
+            if not is_valid:
+                continue
+
+            has_found_valid_knot = True
+            (cand_W, cand_XW, best_cand_err,
+             best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
+                 P, X1, y, betaI, k, cell_le, cell_gt,
+                 cand_W, cand_XW, best_cand_err,
+                 best_cand_W, best_cand_XW, best_cand_P)
+        if not has_found_valid_knot:  # split by the median if nothing else worked
+            b = np.median(Xcellg)
+            is_valid, cell_le, cell_gt = _cap_split(cell, Xcellg, b, mincellsize)
+            if not is_valid:
+                continue
+
+            (cand_W, cand_XW, best_cand_err,
+             best_cand_W, best_cand_XW, best_cand_P) = _eval_cap_split(
+                 P, X1, y, betaI, k, cell_le, cell_gt,
+                 cand_W, cand_XW, best_cand_err,
+                 best_cand_W, best_cand_XW, best_cand_P)
+    return (
+        cand_W, cand_XW, best_cand_err,
+        best_cand_W, best_cand_XW, best_cand_P)
 
 
 class CAPEstimator(Estimator):

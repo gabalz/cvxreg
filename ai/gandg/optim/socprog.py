@@ -25,7 +25,7 @@ def socp_nonnegative_cone(count, backend):
         return clarabel.NonnegativeConeT(count)
     else:
         return ('ineq', count)
-    raise NotImplementedError('Not supported backend: {}'.format(backend))    
+    raise NotImplementedError('Not supported backend: {}'.format(backend))
 
 
 def socp_second_order_cone(count, backend):
@@ -87,7 +87,7 @@ def socp_solve(
     lbfgs_memsize=10,
     verbose=True,
 ):
-    """Solving second order cone programming (SOCP) problem of the form: 
+    """Solving second order cone programming (SOCP) problem of the form:
 
         0.5*x'*H*x + g'*x, s.t. A*x + s = b, s in K.
 
@@ -164,7 +164,7 @@ class SocpOptimTask(OptimTask):
         H: sparse.csc_matrix, g: np.ndarray,
         A: sparse.csc_matrix, b: np.ndarray,
         cones: list[tuple[str, int]],
-        mu_ineq=1e6, mu_soc=1e4, # constraint penalty parameters
+        mu_ineq=1e6, mu_soc=1e4,  # constraint penalty parameters
         verbose=0,
     ):
         OptimTask.__init__(self, verbose)
@@ -202,8 +202,8 @@ class SocpOptimTask(OptimTask):
             self.bineq = np.empty(0)
 
         self.Asoc = Asoc
-        self.AsocSq = [M[1:,:].T.dot(M[1:, :]) for M in Asoc]
-        self.AsocTb = [M[1:,:].T.dot(b[1:]) for M, b in zip(Asoc, bsoc)]
+        self.AsocSq = [M[1:, :].T.dot(M[1:, :]) for M in Asoc]
+        self.AsocTb = [M[1:, :].T.dot(b[1:]) for M, b in zip(Asoc, bsoc)]
         self.Asoc0 = [M[0, :].toarray().ravel() for M in Asoc]
         self.bsoc = bsoc
 

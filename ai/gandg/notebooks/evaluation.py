@@ -10,14 +10,14 @@ def plot_stats(
     stat_dev_name=None, d=None, skipped_estimators=(),
     ylabel='', title='', scaler=1.0,
 ):
-    sns.set(font_scale=2.0, rc={'text.usetex' : True})
+    sns.set(font_scale=2.0, rc={'text.usetex': True})
     sns.set_theme(style='white')
     colors = sns.color_palette()
     cstats = collect_stats_by_name(all_stats, stat_name, skipped_estimators) * scaler
     if d is not None:
         cstats = cstats.xs(d, level='d', drop_level=True)
     nsamples = sorted(cstats.index.get_level_values(0))
-    color_dict = {estimator_name: colors[i%len(colors)]
+    color_dict = {estimator_name: colors[i % len(colors)]
                   for i, estimator_name in enumerate(cstats.keys())}
     if stat_dev_name is not None:
         cstats_dev = collect_stats_by_name(all_stats, stat_dev_name, skipped_estimators) * scaler
@@ -68,7 +68,7 @@ def plot_standard_stats(
         stat_dev_name=test_perf_name+'__std',
         d=d, skipped_estimators=skipped_estimators,
     )
-    
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 4))
     train_time_name = 'train_real_time'
     plot_stats(
@@ -86,4 +86,3 @@ def plot_standard_stats(
         stat_dev_name=test_time_name+'__std',
         d=d, skipped_estimators=skipped_estimators,
     )
-

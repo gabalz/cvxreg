@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 
 from ai.gandg.common.partition import cell_radii, voronoi_partition
-from ai.gandg.algorithm.apcnls.fpc import adaptive_farthest_point_clustering, get_data_radius
+from ai.gandg.algorithm.apcnls.fpc import get_data_radius
 
 
 def get_clustering_stats(nsamples, nruns, data_random_seed,
@@ -13,9 +13,6 @@ def get_clustering_stats(nsamples, nruns, data_random_seed,
     is_d = domain_dims[0] is not None
     for d in domain_dims:
         for n in nsamples:
-            K_vals = []
-            train_eps_vals = []
-            test_eps_vals = []
             for run in range(nruns):
                 args = ([d] if is_d else []) + [n, run, data_random_seed]
                 X_train, y_train, X_test, y_test = get_data_func(*args)[:4]
@@ -59,7 +56,7 @@ def get_clustering_cell_size_distribution(n, nruns, data_random_seed,
 
 
 def _init_sns():
-    sns.set(font_scale=2.0, rc={'text.usetex' : True})
+    sns.set(font_scale=2.0, rc={'text.usetex': True})
     sns.set_theme(style='white')
 
 
@@ -103,7 +100,7 @@ def plot_partition_epsilon(ax, d, nsamples, afpc_stats):
                         stats[:, i] + stats[:, i+1],
                         alpha=0.1, color=color)
         sns.lineplot(ax=ax, x=nsamples, y=stats[:, i],
-                     linewidth=3, label='$\epsilon$ ('+label+')', color=color)
+                     linewidth=3, label=r'$\epsilon$ ('+label+')', color=color)
     ax.set(xlabel='number of samples ($n$)', ylim=(0.0, None))
     ax.set(title='AFPC covering radius' + (f' (d = {d})' if is_d else ''))
     return ax
