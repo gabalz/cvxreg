@@ -6,3 +6,4 @@ osqp==1.0.4
 clarabel==0.11.0
 scikit-learn==1.6.1
 scikit-fda==0.10.1
+xgboost==3.0.1

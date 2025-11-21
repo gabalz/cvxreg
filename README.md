@@ -6,6 +6,14 @@ This Python library implements convex and delta-convex regression algorithms of 
 ----------------------------------------------------------------------------------------------------
 # ALGORITHMS
 
+**Delta-Convex Fitting (DCF)** \
+`ai/gandg/algorithm/dcf/dcf.py`
+
+> Near-optimal delta-convex estimation of Lipschitz functions
+> *Gabor Balazs,* \
+> arXiv, 2025
+([paper](https://doi.org/10.48550/arXiv.2511.15615)).
+
 **Adaptively Partitioning Convex Nonparametric Least-Squares (APCNLS)** \
 `ai/gandg/algorithm/apcnls/apcnls.py`
 
@@ -20,7 +28,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 > Convex Regression: Theory, Practice, and Applications, Section 6.2.3, \
 > *Gabor Balazs,* \
 > PhD Thesis, University of Alberta, 2016
-([thesis](https://era.library.ualberta.ca/files/c7d278t254/Balazs_Gabor_201609_PhD.pdf),
+([thesis](https://doi.org/10.7939/R3T43J98B),
 [MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
 
 **Partitioning Convex Nonparametric Least-Squares (PCNLS) with uniformly random Voronoi partition** \
@@ -29,7 +37,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 > Near-Optimal Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
 > AISTATS, 2015
-([paper](http://jmlr.org/proceedings/papers/v38/balazs15.html),
+([paper](https://proceedings.mlr.press/v38/balazs15.html),
 [MATLAB code](http://proceedings.mlr.press/v38/balazs15-supp.zip)).
 
 **Convex Adaptive Partitioning (CAP), and FastCAP** \
@@ -69,15 +77,24 @@ source .../pyenv/bin/activate  # activating the virtual environment
 pip install --upgrade pip
 pip install --upgrade setuptools
 
-pip install numpy scipy osqp clarabel numba
+cd .../cvxreg
+pip install -r requirements.txt  # recommended
+# or
+# for the latest package versions:
+# pip install numpy scipy osqp clarabel numba
+# pip install scikit-learn scikit-fda xgboost  # for ai/gandg/algorithms/external
 
-# For "external algorithms" (in ai/gandg/algorithms/external):
-pip install scikit-learn scikit-fda xgboost
-
-# Jupyter notebook (Optional):
-pip install joblib pandas
-pip install widgetsnbextension jupyter matplotlib seaborn papermill
+# Jupyter notebook (optional):
+pip install joblib pandas widgetsnbextension jupyter matplotlib seaborn papermill
 ```
+
+---------------------------------------------------------------------------------------------------
+# EXPERIMENTS
+
+There are the following Jupyter notebooks in `ai/gandg/notebooks/`:
+
+- `synthetic.ipynb`: experiments on synthetic regression problems;
+- `dataset.ipynb`: experiments on public datasets.
 
 ---------------------------------------------------------------------------------------------------
 # UNIT TESTING
@@ -87,16 +104,10 @@ For examples, see the doctests in the files mentioned in the ALGORITHMS section 
 All the doctests can be run by using the nose package:
 ```bash
 source .../pyenv/bin/activate  # if not done yet
-pip install pytest
+pip install pytest seaborn
 cd .../cvxreg  # go to the root directory of this project
 PYTHONPATH=. pytest --doctest-modules ai/
 ```
-
----------------------------------------------------------------------------------------------------
-# EXPERIMENTS
-
-There is a Jupyter notebook `ipynb/synthetic.ipynb`
-which provides basic experimenting on synthetic regression problems.
 
 ---------------------------------------------------------------------------------------------------
 # DEVELOPMENT SETUP

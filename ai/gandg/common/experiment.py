@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 from ai.gandg.common.util import set_random_seed
 from ai.gandg.common.estimator import EstimatorModel
+from ai.gandg.common.logging_helper import attach_worker_logging, info
 
 
 def loss_l1(yhat, y):  # L1-error
@@ -42,7 +43,7 @@ def _prepare_experiment_params(n, estimator_name, run,
 
 def experiment_runner(estimator_name, params, result_cache, run_experiment_func):
     exp_hash = result_cache.get_hash(run_experiment_func, params)
-    print(f'experiment_runner ({exp_hash}): {list(params.items())}')
+    info(f'experiment_runner ({exp_hash}): {list(params.items())}')
     return result_cache.cached_func(run_experiment_func, estimator_name,
                                     is_jupyter_func=True)(
         *list(params.values())
@@ -152,9 +153,10 @@ def _get_result_log_message(d, n, estimator_name, run,
 
 def calc_experiment_result(n, estimator_name, run,
                            get_data_func, get_estimator_func,
-                           stat_losses, report_loss_name,
+                           stat_losses, report_loss_name, log_queue,
                            data_random_seed, training_random_seed,
-                           log_func=None, d=None, L=None, L_scaler=1.0):
+                           d=None, L=None, L_scaler=1.0):
+    attach_worker_logging(log_queue)
     if d is None:
         X_train, y_train, X_test, y_test = get_data_func(
             n, run, data_random_seed,
@@ -171,10 +173,9 @@ def calc_experiment_result(n, estimator_name, run,
         L_true = max(L(X_train), L(X_test)) if callable(L) else L
         Lscaler = eval(L_scaler) if isinstance(L_scaler, str) else L_scaler
         L_est = (L_true * Lscaler) if np.isfinite(L_true) else np.inf
-    if log_func is not None:
-        log_func(_get_experiment_log_message(d, n, estimator_name, run,
-                                             X_train, y_train, X_test, y_test,
-                                             L_true=L_true))
+    info(_get_experiment_log_message(d, n, estimator_name, run,
+                                     X_train, y_train, X_test, y_test,
+                                     L_true=L_true))
     train_args = OrderedDict()
     if np.isfinite(L_est):
         train_args['L'] = L_est
@@ -192,11 +193,10 @@ def calc_experiment_result(n, estimator_name, run,
         X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test,
         y_train_noiseless=y_train_noiseless, train_args=train_args,
     )
-    if log_func is not None:
-        log_func(_get_result_log_message(
-            d=d, n=n, estimator_name=estimator_name, run=run,
-            result=result, report_loss_name=report_loss_name,
-        ))
+    info(_get_result_log_message(
+        d=d, n=n, estimator_name=estimator_name, run=run,
+        result=result, report_loss_name=report_loss_name,
+    ))
     return result
 
 

@@ -130,4 +130,5 @@ dmypy.json
 
 # Caches.
 _result_cache/
+_cache_data/
 
