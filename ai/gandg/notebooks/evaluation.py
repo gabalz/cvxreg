@@ -25,12 +25,10 @@ def bar_plot(
     df = data_df[data_df['method'].isin(estimator_names)].sort_values('method')
     df['method'] = df['method'].map(estimator_names)
 
-    sns.set(font_scale=2.0, rc={'text.usetex' : True})
-    linewidth = 4
-    fontsize = 18
+    sns.set(font_scale=2.0, rc={'text.usetex': True})
     sns.set_theme(
         style="whitegrid", palette="colorblind",
-        rc={'figure.figsize':(5,3), 'axes.titlesize': 24,
+        rc={'figure.figsize': (5, 3), 'axes.titlesize': 24,
             'axes.linewidth': 1.0, 'axes.labelsize': 24})
 
     plt.rcParams['xtick.bottom'] = True
@@ -252,7 +250,6 @@ def print_dcf_lipschitz_constants(all_stats):
         model = result['model']
         if not isinstance(model, DCFEstimatorModel):
             continue
-        run = key[-1]
         maxLs.setdefault(key[:-1], []).append(model.get_maxL())
     for key, values in maxLs.items():
         print(f"{key}: {np.min(values):.2f} <= {np.mean(values):.2f}"

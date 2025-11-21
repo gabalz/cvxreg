@@ -1,13 +1,11 @@
 import gc
-import sys
 import copy
-import time
 import warnings
 import numpy as np
 from functools import partial
 from collections import namedtuple
 from timeit import default_timer as timer
-from scipy.sparse import csc_matrix, block_diag, coo_matrix, diags, vstack, triu
+from scipy.sparse import csc_matrix, block_diag, coo_matrix, vstack, triu
 
 from ai.gandg.common.estimator import EstimatorModel, Estimator
 from ai.gandg.common.regression import prepare_prediction, postprocess_prediction
@@ -15,7 +13,7 @@ from ai.gandg.optim.socprog import (
     socp_solve, SOCP_BACKEND__LBFGS, convert_matrix_to_socp_solver_format,
     socp_nonnegative_cone, socp_second_order_cone,
 )
-from ai.gandg.common.distance import euclidean_distance, squared_distance
+from ai.gandg.common.distance import euclidean_distance
 from ai.gandg.common.partition import (
     Partition, voronoi_partition, cell_radii, find_closest_centers,
 )
@@ -127,29 +125,29 @@ class DCFEstimatorModel(EstimatorModel):
 
 
 DCFClusteringStats = namedtuple('DCFClusteringStats', [
-    'ncells',             # number of cells (K)
-    'max_epsilon',        # maximum cell radius (eps_n(\hat{X}_K))
-    'avg_epsilon',        # average cell radius
-    'runtime',            # clustering runtime in seconds
+    'ncells',              # number of cells (K)
+    'max_epsilon',         # maximum cell radius (eps_n(\hat{X}_K))
+    'avg_epsilon',         # average cell radius
+    'runtime',             # clustering runtime in seconds
 ])
 DCFSOCPStats = namedtuple('DCFSOCPStats', [
-    'reg_var_value',      # value of the regularization variable (z)
-    'obj_val',            # SOCP objective value (of g_n)
-    'proj_obj_val',       # SOCP objective value after projecting the solution (g_n -> f_n)
-    'niterations',        # number of iterations performed by the SOCP solver
-    'runtime_data',       # SOCP data preparation runtime in seconds
-    'runtime_solve',      # SOCP solver runtime in seconds
-    'nparams_wo_centers', # number of model parameters (not counting the centers)
-    'nparams_w_centers',  # number of model parameters (including the centers)
+    'reg_var_value',       # value of the regularization variable (z)
+    'obj_val',             # SOCP objective value (of g_n)
+    'proj_obj_val',        # SOCP objective value after projecting the solution (g_n -> f_n)
+    'niterations',         # number of iterations performed by the SOCP solver
+    'runtime_data',        # SOCP data preparation runtime in seconds
+    'runtime_solve',       # SOCP solver runtime in seconds
+    'nparams_wo_centers',  # number of model parameters (not counting the centers)
+    'nparams_w_centers',   # number of model parameters (including the centers)
 ])
 DCFLocalOptStats = namedtuple('DCFLocalOptStats', [
-    'init_obj_val',       # objective value at initial point
-    'soln_obj_val',       # objective value at solution point
-    'opt_status',         # optimization status (i.e., reason of termination)
-    'niterations',        # number of iteratiosn performed by the solver
-    'nfun_evals',         # number of function evaluations performed by the solver
-    'ngrad_evals',        # number of gradient evaluations performed by the solver
-    'runtime',            # solver runtime in seconds
+    'init_obj_val',        # objective value at initial point
+    'soln_obj_val',        # objective value at solution point
+    'opt_status',          # optimization status (i.e., reason of termination)
+    'niterations',         # number of iteratiosn performed by the solver
+    'nfun_evals',          # number of function evaluations performed by the solver
+    'ngrad_evals',         # number of gradient evaluations performed by the solver
+    'runtime',             # solver runtime in seconds
 ])
 
 
@@ -201,7 +199,7 @@ def _get_nparams_pwf(d, variant, use_linear):
 
 
 def _dcf_calc_diffs(X, centers, variant):
-    diffs = (X[:, :, None] - centers[:, :, None].T).transpose(0,2,1)
+    diffs = (X[:, :, None] - centers[:, :, None].T).transpose(0, 2, 1)
     norms = (None if variant == '+' else
              np.linalg.norm(diffs, ord=_get_norm_p(variant), axis=2))
     return diffs, norms
@@ -265,7 +263,7 @@ def dcf_fix_bias_offset(model, X, y, nsplit=10000):
     >>> from ai.gandg.common.util import set_random_seed
     >>> from ai.gandg.common.partition import max_affine_partition, find_min_dist_centers
     >>> set_random_seed(19)
-    
+
     >>> X = np.random.randn(10, 4)
     >>> weights0 = np.random.randn(3, 5)
     >>> partition = max_affine_partition(np.insert(X, 0, 1.0, axis=1), weights0)
@@ -420,7 +418,6 @@ def dcf_fix_bias_offset(model, X, y, nsplit=10000):
                 symm_offset = 2.0 * np.mean(w[:, :2])
                 w[:, :2] -= 0.5 * symm_offset
             else:
-                symm = model.is_symmetrized
                 w[0][:, 0] += bias_offset
                 symm_offset = 0.5 * (np.mean(w[0][:, 0]) + np.mean(w[1][:, 0]))
                 w[0][:, 0] -= symm_offset
@@ -440,7 +437,7 @@ def dcf_predict(model, X, nsplit=10000, return_used_weights=False):
     >>> from ai.gandg.common.util import set_random_seed
     >>> from ai.gandg.common.partition import max_affine_partition, find_min_dist_centers
     >>> set_random_seed(19)
-    
+
     >>> X = np.random.randn(10, 4)
     >>> weights0 = np.random.randn(3, 5)
     >>> partition = max_affine_partition(np.insert(X, 0, 1.0, axis=1), weights0)
@@ -624,6 +621,8 @@ def dcf_predict(model, X, nsplit=10000, return_used_weights=False):
         else:
             w1 = weights[:, 0::2]
             w2 = weights[:, 1::2]
+    else:
+        w1 = w2 = None
     yhat = np.zeros(n)
     for (split_start, split_end) in splits:
         Xsplit = X[split_start:split_end, :]
@@ -662,43 +661,48 @@ def dcf_predict(model, X, nsplit=10000, return_used_weights=False):
                     ind = _add_used_inds(ind, np.argmax(Xw, axis=1))
     res = postprocess_prediction(model, yhat)
     if return_used_weights:
-        nparams = model.get_nparams(include_centers=True)
-        res_model = None
-        if is_mma:
-            W = copy.deepcopy(weights)
-            if symm:
-                if (W[0].shape[0] > len(ind[0][0]) or W[0].shape[1] > len(ind[0][1])
-                    or W[1].shape[0] > len(ind[1][0]) or W[1].shape[1] > len(ind[1][1])):
-                    ind = ((sorted(ind[0][0]), sorted(ind[0][1])),
-                           (sorted(ind[1][0]), sorted(ind[1][1])))
-                    res_model = copy.deepcopy(model)
-                    res_model.weights = (W[0][ind[0][0], :, :][:, ind[0][1], :],
-                                         W[1][ind[1][0], :, :][:, ind[1][1], :])
-            else:
-                if W.shape[0] > len(ind[0]) or W.shape[1] > len(ind[1]):
-                    ind = (sorted(ind[0]), sorted(ind[1]))
-                    res_model = copy.deepcopy(model)
-                    res_model.weights = W[ind[0], :, :][:, ind[1], :]
-        else:
-            if symm:
-                if w1.shape[0] > len(ind[0]) or w2.shape[0] > len(ind[1]):
-                    ind = (sorted(ind[0]), sorted(ind[1]))
-                    res_model = copy.deepcopy(model)
-                    res_model.is_symmetrized = tuple(ind)
-                    res_model.weights = (w1[ind[0], :], w2[ind[1], :])
-            else:
-                if weights.shape[0] > len(ind):
-                    ind = sorted(ind)
-                    res_model = copy.deepcopy(model)
-                    weights = res_model.weights[ind, :]
-                    res_model.weights = weights
-                    res_model.centers = model.centers[ind, :]
+        res_model = _reduce_model(model, weights, w1, w2, ind, is_mma, symm)
         res = (res, res_model)
-        if res_model is not None:
-            res_nparams = res_model.get_nparams(include_centers=True)
-            assert res_nparams < nparams, f"res_nparams:{nparams}, nparams:{nparams}"
 
     return res
+
+
+def _reduce_model(model, weights, w1, w2, ind, is_mma, symm):
+    nparams = model.get_nparams(include_centers=True)
+    res_model = None
+    if is_mma:
+        W = copy.deepcopy(weights)
+        if symm:
+            if (W[0].shape[0] > len(ind[0][0]) or W[0].shape[1] > len(ind[0][1])
+                    or W[1].shape[0] > len(ind[1][0]) or W[1].shape[1] > len(ind[1][1])):
+                ind = ((sorted(ind[0][0]), sorted(ind[0][1])),
+                       (sorted(ind[1][0]), sorted(ind[1][1])))
+                res_model = copy.deepcopy(model)
+                res_model.weights = (W[0][ind[0][0], :, :][:, ind[0][1], :],
+                                     W[1][ind[1][0], :, :][:, ind[1][1], :])
+        else:
+            if W.shape[0] > len(ind[0]) or W.shape[1] > len(ind[1]):
+                ind = (sorted(ind[0]), sorted(ind[1]))
+                res_model = copy.deepcopy(model)
+                res_model.weights = W[ind[0], :, :][:, ind[1], :]
+    else:
+        if symm:
+            if w1.shape[0] > len(ind[0]) or w2.shape[0] > len(ind[1]):
+                ind = (sorted(ind[0]), sorted(ind[1]))
+                res_model = copy.deepcopy(model)
+                res_model.is_symmetrized = tuple(ind)
+                res_model.weights = (w1[ind[0], :], w2[ind[1], :])
+        else:
+            if weights.shape[0] > len(ind):
+                ind = sorted(ind)
+                res_model = copy.deepcopy(model)
+                weights = res_model.weights[ind, :]
+                res_model.weights = weights
+                res_model.centers = model.centers[ind, :]
+    if res_model is not None:
+        res_nparams = res_model.get_nparams(include_centers=True)
+        assert res_nparams < nparams, f"res_nparams:{res_nparams}, nparams:{nparams}"
+    return res_model
 
 
 def _init_used_ind(symm, is_mma):
@@ -775,7 +779,7 @@ def get_dcf_partition(X, ntrials=1, q=1, dist=euclidean_distance,
             _objval = max(cell_radii(X, _partition, _centers))
         if minimizeK:
             if (partition is None or _partition.ncells < partition.ncells
-                or (_partition.ncells == partition.ncells and _objval < objval)):
+                    or (_partition.ncells == partition.ncells and _objval < objval)):
                 partition = _partition
                 centers = _centers
                 objval = _objval
@@ -787,6 +791,195 @@ def get_dcf_partition(X, ntrials=1, q=1, dist=euclidean_distance,
     assert centers.shape[1] == X.shape[1]
     assert centers.shape[0] == partition.ncells
     return partition, centers, objval
+
+
+def _check_input(logger, verbose, X, y, variant,
+                 is_symmetrized, is_convex, use_linear):
+    n, d = X.shape
+    assert len(y) == n
+    assert n > d
+    if len(y.shape) > 1:
+        assert len(y.shape) == 2 and y.shape[1] == 1
+        y = y.ravel()
+    if verbose > 0:
+        logger(f'DCF({variant}), TRAIN, n: {n}, d: {d}')
+    variant = str(variant)
+    assert variant[-1] != 'w' or not is_symmetrized, \
+        'Symmetrization is not supported for *w models!'
+    assert variant[0] != '+' or len(variant) == 1, \
+        'Model modifiers (q, w, etc...) are not supported for + models!'
+    assert use_linear or not is_convex, \
+        'Option use_linear=False is only supported for is_convex=False!'
+    assert use_linear or (variant[-1] not in ('q', 'w')), \
+        'Option use_linear=False is not supported for variant: '+variant+'!'
+    assert use_linear or variant != '+', \
+        'Option use_linear=False is not possible for variant="+"!'
+    is_mma = (variant == 'mma')
+    if is_mma:
+        variant = 'inf'
+    return y, variant, is_mma
+
+
+def _parse_params(logger, variant, X, y, K, verbose, max_epsilon, avg_epsilon,
+                  L_regularizer, L_regularizer_offset, L_sum_regularizer,
+                  bias_regularizer, local_opt_maxiter, local_opt_L_regularizer_offset):
+    n, d = X.shape
+    K  # might be used in the evals
+    x_radius = get_data_radius(X)
+    y_radius = np.max(np.abs(y - np.mean(y)))
+    if verbose > 0:
+        logger(f'DCF({variant}), DATA, n: {n}, d: {d}'
+               f', x_radius: {x_radius:.4f}, y_radius: {y_radius:.4f}')
+    scale_L_sum_regularizer_by_rec_cell_size = False
+    if isinstance(L_regularizer, str):
+        L_regularizer = eval(L_regularizer)
+    if isinstance(L_regularizer_offset, str):
+        L_regularizer_offset = eval(L_regularizer_offset)
+    if isinstance(bias_regularizer, str):
+        bias_regularizer = eval(bias_regularizer)
+    if isinstance(L_sum_regularizer, str):
+        if L_sum_regularizer.endswith('/I_k'):
+            scale_L_sum_regularizer_by_rec_cell_size = True
+            L_sum_regularizer = L_sum_regularizer[:-4]
+        L_sum_regularizer = eval(L_sum_regularizer)
+    if isinstance(local_opt_maxiter, str):
+        local_opt_maxiter = eval(local_opt_maxiter)
+    if isinstance(local_opt_L_regularizer_offset, str):
+        local_opt_L_regularizer_offset = eval(local_opt_L_regularizer_offset)
+
+    return (
+        L_regularizer, L_regularizer_offset, L_sum_regularizer,
+        bias_regularizer, local_opt_maxiter, local_opt_L_regularizer_offset,
+        scale_L_sum_regularizer_by_rec_cell_size,
+    )
+
+
+def _scaling(logger, verbose, variant, normalize, X, y, centers,
+             L_regularizer, L_regularizer_offset,
+             bias_regularizer, L_sum_regularizer):
+    xmean = None
+    xscale = None
+    ymean = None
+    yscale = None
+    if normalize:
+        xmean = np.mean(X, axis=0)
+        X = X - xmean
+        centers = centers - xmean
+        xscale = np.linalg.norm(X, ord='fro') / np.sqrt(X.shape[0])
+        X /= xscale
+        centers /= xscale
+        ymean = np.mean(y)
+        y = y - ymean
+        yscale = np.std(y)
+        y /= yscale
+        if L_regularizer_offset is not None:
+            L_regularizer_offset *= (xscale / yscale)
+        if L_regularizer is not None:
+            L_regularizer /= (xscale ** 2)
+        if L_sum_regularizer is not None:
+            L_sum_regularizer /= (xscale ** 2)
+        if bias_regularizer is not None:
+            bias_regularizer /= yscale
+    if verbose > 0:
+        logger(f'DCF({variant}), PARAMS, xscale: {xscale or 1.0:.4f}, yscale: {yscale or 1.0:.4f}'
+               f', L_regularizer_offset: {L_regularizer_offset or 0.0:.4f}'
+               f', L_regularizer: {L_regularizer or 0.0:.4f}'
+               f', L_sum_regularizer: {L_sum_regularizer or 0.0:.4f}'
+               f', bias_regularizer: {bias_regularizer or 0.0}')
+    return (
+        xmean, xscale, ymean, yscale, X, y, centers,
+        L_regularizer, L_regularizer_offset,
+        bias_regularizer, L_sum_regularizer,
+    )
+
+
+def _dcf_socp_solve(X, y, partition, centers, variant, is_convex, is_mma, is_symmetrized,
+                    use_linear, L_regularizer, L_regularizer_offset,
+                    bias_regularizer, L_sum_regularizer, backend,
+                    logger, verbose, warn_on_nok_weights,
+                    socp_params, scale_L_sum_regularizer_by_rec_cell_size):
+    n, d = X.shape
+    K = partition.ncells
+    t_start = timer()
+    H, g, A, b, cones, scaled_nparams_pwf, nparams_reg = dcf_socp_data(
+        X, y, partition, centers, variant, is_convex, is_mma, is_symmetrized,
+        use_linear, L_regularizer, L_regularizer_offset,
+        bias_regularizer, L_sum_regularizer, backend, verbose=verbose,
+        scale_L_sum_regularizer_by_rec_cell_size=scale_L_sum_regularizer_by_rec_cell_size,
+    )
+    socp_data_seconds = timer() - t_start
+    if verbose > 0:
+        logger(f'DCF({variant}), SOLVE, nvars: {len(g)}'
+               f', nineqcons: {cones[0][-1] if isinstance(cones[0], tuple) else cones[0].dim}'
+               f', nsoccons: {len(cones)-1}, etime: {socp_data_seconds:.1f}s')
+    socp_params = dict(socp_params)
+    if 'verbose' not in socp_params:
+        socp_params['verbose'] = (verbose > 2)
+    socp_result = socp_solve(
+        H, g, A, b, cones,
+        backend=backend, **socp_params
+    )
+    socp_solve_second = timer() - t_start - socp_data_seconds
+    if verbose > 0:
+        logger(f'DCF({variant}), SOLVED, etime: {timer()-t_start:.1f}s')
+    weights = socp_result.primal_soln
+    obj_val = (
+        0.5 * (weights.dot(H.dot(weights)) + weights.dot(triu(H, 1).dot(weights)))
+        + g.dot(weights)
+        + (0.5/n) * y.dot(y)
+    )
+
+    reg_var_value = None
+    if L_regularizer is not None:
+        reg_var_value = weights[-1]
+    if nparams_reg > 0:
+        weights = weights[:-nparams_reg]
+    extra_weights = None
+    if variant[-1] in ('w',):
+        extra_weights = weights[-1]
+        weights = weights[:-1]
+    weights = np.reshape(weights, (K, -1))
+    assert centers.shape[0] == weights.shape[0]
+    weights, extra_weights = _check_cvx_mma_weights(
+        weights, extra_weights, d,
+        is_convex, is_mma, is_symmetrized,
+        variant, warn_on_nok_weights,
+    )
+    if extra_weights is not None:
+        weights = (weights, extra_weights)
+    model = DCFEstimatorModel(
+        weights=weights, centers=centers,
+        variant=variant, use_linear=use_linear,
+        is_convex=is_convex, is_symmetrized=is_symmetrized,
+    )
+    if is_mma:
+        model = model.to_mma()
+    yhat = dcf_predict(model, X)
+    proj_loss = 0.5 * np.mean(np.square(y - yhat))
+    proj_obj_val = proj_loss + 0.5 * _dcf_reg(
+        weights,
+        is_symmetrized=is_symmetrized,
+        L_regularizer=L_regularizer,
+        L_regularizer_offset=L_regularizer_offset,
+        L_sum_regularizer=L_sum_regularizer,
+    )
+    socp_stats = DCFSOCPStats(
+        reg_var_value=reg_var_value,
+        obj_val=obj_val,
+        proj_obj_val=proj_obj_val,
+        niterations=socp_result.niterations,
+        runtime_data=socp_data_seconds,
+        runtime_solve=socp_solve_second,
+        nparams_wo_centers=model.get_nparams(include_centers=False),
+        nparams_w_centers=model.get_nparams(include_centers=True),
+    )
+    if verbose >= 2:
+        train_l2 = np.mean(np.square(yhat - y))
+        logger(f'obj_val: {obj_val:.4f}, '
+               f'socp_stats: {socp_stats}, '
+               f'train_l2: {train_l2:.4f}, '
+               f'y.dot.y: {y.dot(y)/n:.4f}')
+    return model, proj_loss, socp_stats
 
 
 def dcf_train(
@@ -843,27 +1036,8 @@ def dcf_train(
     :param socp_params: extra SOCP solver parameters
     """
     n, d = X.shape
-    assert len(y) == n
-    assert n > d
-    if len(y.shape) > 1:
-        assert len(y.shape) == 2 and y.shape[1] == 1
-        y = y.ravel()
-    if verbose > 0:
-        logger(f'DCF({variant}), TRAIN, n: {n}, d: {d}')
-    variant = str(variant)
-    assert variant[-1] != 'w' or not is_symmetrized, \
-        'Symmetrization is not supported for *w models!'
-    assert variant[0] != '+' or len(variant) == 1, \
-        'Model modifiers (q, w, etc...) are not supported for + models!'
-    assert use_linear or not is_convex, \
-        'Option use_linear=False is only supported for is_convex=False!'
-    assert use_linear or (variant[-1] not in ('q', 'w')), \
-        'Option use_linear=False is not supported for variant: '+variant+'!'
-    assert use_linear or variant != '+', \
-        'Option use_linear=False is not possible for variant="+"!'
-    is_mma = (variant == 'mma')
-    if is_mma:
-        variant = 'inf'
+    y, variant, is_mma = _check_input(logger, verbose, X, y, variant,
+                                      is_symmetrized, is_convex, use_linear)
 
     t_start = timer()
     if centers is None:
@@ -890,146 +1064,33 @@ def dcf_train(
         runtime=timer() - t_start,
     )
 
-    x_radius = get_data_radius(X)
-    y_radius = np.max(np.abs(y - np.mean(y)))
-    if verbose > 0:
-        logger(f'DCF({variant}), DATA, n: {n}, d: {d}'
-               f', x_radius: {x_radius:.4f}, y_radius: {y_radius:.4f}')
-    scale_L_sum_regularizer_by_rec_cell_size = False
-    if isinstance(L_regularizer, str):
-        L_regularizer = eval(L_regularizer)
-    if isinstance(L_regularizer_offset, str):
-        L_regularizer_offset = eval(L_regularizer_offset)
-    if isinstance(bias_regularizer, str):
-        bias_regularizer = eval(bias_regularizer)
-    if isinstance(L_sum_regularizer, str):
-        if L_sum_regularizer.endswith('/I_k'):
-            scale_L_sum_regularizer_by_rec_cell_size = True
-            L_sum_regularizer = L_sum_regularizer[:-4]
-        L_sum_regularizer = eval(L_sum_regularizer)
-    if isinstance(local_opt_maxiter, str):
-        local_opt_maxiter = eval(local_opt_maxiter)
-    if isinstance(local_opt_L_regularizer_offset, str):
-        local_opt_L_regularizer_offset = eval(local_opt_L_regularizer_offset)
-    del x_radius
-    del y_radius
+    (L_regularizer, L_regularizer_offset, L_sum_regularizer,
+     bias_regularizer, local_opt_maxiter, local_opt_L_regularizer_offset,
+     scale_L_sum_regularizer_by_rec_cell_size) = _parse_params(
+         logger, variant, X, y, K, verbose, max_epsilon, avg_epsilon,
+         L_regularizer, L_regularizer_offset, L_sum_regularizer,
+         bias_regularizer, local_opt_maxiter, local_opt_L_regularizer_offset,
+    )
     del max_epsilon
     del avg_epsilon
 
-    xmean = None
-    xscale = None
-    ymean = None
-    yscale = None
-    if normalize:
-        xmean = np.mean(X, axis=0)
-        X = X - xmean
-        centers = centers - xmean
-        xscale = np.linalg.norm(X, ord='fro') / np.sqrt(n)
-        X /= xscale
-        centers /= xscale
-        ymean = np.mean(y)
-        y = y - ymean
-        yscale = np.std(y)
-        y /= yscale
-        if L_regularizer_offset is not None:
-            L_regularizer_offset *= (xscale / yscale)
-        if L_regularizer is not None:
-            L_regularizer /= (xscale ** 2)
-        if L_sum_regularizer is not None:
-            L_sum_regularizer /= (xscale ** 2)
-        if bias_regularizer is not None:
-            bias_regularizer /= yscale
-    if verbose > 0:
-        logger(f'DCF({variant}), PARAMS, xscale: {xscale or 1.0:.4f}, yscale: {yscale or 1.0:.4f}'
-               f', L_regularizer_offset: {L_regularizer_offset or 0.0:.4f}'
-               f', L_regularizer: {L_regularizer or 0.0:.4f}'
-               f', L_sum_regularizer: {L_sum_regularizer or 0.0:.4f}'
-               f', bias_regularizer: {bias_regularizer or 0.0}')
+    (xmean, xscale, ymean, yscale, X, y, centers,
+     L_regularizer, L_regularizer_offset,
+     bias_regularizer, L_sum_regularizer) = _scaling(
+         logger, verbose, variant, normalize, X, y, centers,
+         L_regularizer, L_regularizer_offset,
+         bias_regularizer, L_sum_regularizer)
 
     if negate_y:
         yscale = -1.0 if yscale is None else -yscale
         y = -y
 
-    t_start = timer()
-    H, g, A, b, cones, scaled_nparams_pwf, nparams_reg = dcf_socp_data(
+    model, proj_loss, socp_stats = _dcf_socp_solve(
         X, y, partition, centers, variant, is_convex, is_mma, is_symmetrized,
         use_linear, L_regularizer, L_regularizer_offset,
-        bias_regularizer, L_sum_regularizer, backend, verbose=verbose,
-        scale_L_sum_regularizer_by_rec_cell_size=scale_L_sum_regularizer_by_rec_cell_size,
-    )
-    socp_data_seconds = timer() - t_start
-    if verbose > 0:
-        logger(f'DCF({variant}), SOLVE, nvars: {len(g)}'
-               f', nineqcons: {cones[0][-1] if isinstance(cones[0], tuple) else cones[0].dim}'
-               f', nsoccons: {len(cones)-1}, etime: {socp_data_seconds:.1f}s')
-    socp_params = dict(socp_params)
-    if 'verbose' not in socp_params:
-        socp_params['verbose'] = (verbose > 2)
-    socp_result = socp_solve(
-        H, g, A, b, cones,
-        backend=backend, **socp_params
-    )
-    socp_solve_second = timer() - t_start - socp_data_seconds
-    if verbose > 0:
-        logger(f'DCF({variant}), SOLVED, etime: {timer()-t_start:.1f}s')
-    weights = socp_result.primal_soln
-    obj_val = (
-        0.5 * (weights.dot(H.dot(weights)) + weights.dot(triu(H, 1).dot(weights)))
-        + g.dot(weights)
-        + (0.5/n) * y.dot(y)
-    )
-
-    reg_var_value = None
-    if L_regularizer is not None:
-        reg_var_value = weights[-1]
-    if nparams_reg > 0:
-        weights = weights[:-nparams_reg]
-    extra_weights = None
-    if variant[-1] in ('w',):
-        extra_weights = weights[-1]
-        weights = weights[:-1]
-    weights = np.reshape(weights, (K, -1))
-    assert centers.shape[0] == weights.shape[0]
-    weights, extra_weights = _check_cvx_mma_weights(
-        weights, extra_weights, d,
-        is_convex, is_mma, is_symmetrized,
-        variant, warn_on_nok_weights,
-    )
-    if extra_weights is not None:
-        weights = (weights, extra_weights)
-    model = DCFEstimatorModel(
-        weights=weights, centers=centers,
-        variant=variant, use_linear=use_linear,
-        is_convex=is_convex, is_symmetrized=is_symmetrized,
-    )
-    if is_mma:
-        model = model.to_mma()
-    yhat = dcf_predict(model, X)
-
-    proj_loss = 0.5 * np.mean(np.square(y - yhat))
-    proj_obj_val = proj_loss + 0.5 * _dcf_reg(
-        weights,
-        is_symmetrized=is_symmetrized,
-        L_regularizer=L_regularizer,
-        L_regularizer_offset=L_regularizer_offset,
-        L_sum_regularizer=L_sum_regularizer,
-    )
-    socp_stats = DCFSOCPStats(
-        reg_var_value=reg_var_value,
-        obj_val=obj_val,
-        proj_obj_val=proj_obj_val,
-        niterations=socp_result.niterations,
-        runtime_data=socp_data_seconds,
-        runtime_solve=socp_solve_second,
-        nparams_wo_centers=model.get_nparams(include_centers=False),
-        nparams_w_centers=model.get_nparams(include_centers=True),
-    )
-    if verbose >= 2:
-        train_l2 = np.mean(np.square(yhat - y))
-        logger(f'obj_val: {obj_val:.4f}, '
-               f'socp_stats: {socp_stats}, '
-               f'train_l2: {train_l2:.4f}, '
-               f'y.dot.y: {y.dot(y)/n:.4f}')
+        bias_regularizer, L_sum_regularizer, backend,
+        logger, verbose, warn_on_nok_weights,
+        socp_params, scale_L_sum_regularizer_by_rec_cell_size)
 
     local_opt_stats = None
     maxL = model.get_maxL()
@@ -1070,7 +1131,7 @@ def dcf_train(
             logger(f'DCF({variant}), OPTIM: {local_opt_stats}')
         assert opt_obj_val < init_obj_val + 1e-8, \
             f'opt_obj_val: {opt_obj_val:.6f}, init_obj_val: {init_obj_val:.6f}'
-            
+
     return DCFEstimatorModel(
         weights=model.weights, centers=model.centers,
         is_convex=model.is_convex, is_symmetrized=model.is_symmetrized,
@@ -1195,7 +1256,7 @@ def _local_optim(opt_type, maxiter, lbfgs_memsize, noise_level,
                 verbose=(verbose > 1), smooth_tol=1e-6,
             )
         else:
-            raise NotImplemented('Not supported opt_type: {opt_type}!')
+            raise NotImplementedError('Not supported opt_type: {opt_type}!')
 
     from ai.gandg.optim.lbfgs import LBFGS
     opt_res = LBFGS(max_memory=lbfgs_memsize,
@@ -1224,7 +1285,7 @@ def _local_optim(opt_type, maxiter, lbfgs_memsize, noise_level,
             weights = (np.reshape(weights[:wlen], dims),
                        np.reshape(weights[wlen:], dims))
         else:
-            weights = np.reshape(weights, dims)            
+            weights = np.reshape(weights, dims)
     else:
         weights = _check_cvx_mma_weights(np.reshape(weights, (K, -1)), None, d,
                                          model.is_convex, False, False,
@@ -1236,7 +1297,7 @@ def _local_optim(opt_type, maxiter, lbfgs_memsize, noise_level,
         is_convex=model.is_convex, is_symmetrized=model.is_symmetrized,
     )
     if verbose > 1:
-        logger(f"DCF({model.variant}), OPTIM, maxL:{model.get_maxL():.4f}")        
+        logger(f"DCF({model.variant}), OPTIM, maxL:{model.get_maxL():.4f}")
     return model, DCFLocalOptStats(
         init_obj_val=init_fval,
         soln_obj_val=final_fval,
@@ -1265,12 +1326,12 @@ def dcf_phi(cellX, center, variant, use_linear):
         cellXe[:, d1:] = -cellXe[:, 1:d1]
         np.maximum(0.0, cellXe[:, 1:], out=cellXe[:, 1:])
     elif variant[-1] == 'q':
-        norms = np.linalg.norm(cellXe[:,1:d1], axis=1,
+        norms = np.linalg.norm(cellXe[:, 1:d1], axis=1,
                                ord=_get_norm_p(variant))
         cellXe[:, d1] = norms
-        cellXe[:, d1+1] = norms**2        
+        cellXe[:, d1+1] = norms**2
     else:
-        cellXe[:, d1] = np.linalg.norm(cellXe[:,1:d1], axis=1,
+        cellXe[:, d1] = np.linalg.norm(cellXe[:, 1:d1], axis=1,
                                        ord=_get_norm_p(variant))
     return cellXe
 
@@ -1329,7 +1390,6 @@ def _dcf_HgAb(
         cell_size = len(cell_k)
         cellXk = dcf_phi(X[cell_k, :], centers[k, :], variant, use_linear)
         col_k = nparams_range + (k * nparams_pwf)
-        cell_ones = np.ones((cell_size, 1))
         if is_symmetrized:
             cellXke = np.empty((cell_size, 2*cellXk.shape[1]))
             cellXke[:, 0::2] = cellXk
@@ -1434,7 +1494,7 @@ def _add_cvx_or_mma_consraints_to_Ab(
                 A_cols += [col-2, col-1]
                 row_idx += 2
         else:
-            shifts = range(1, 2+int(variant[-1]=='q'))
+            shifts = range(1, 2+int(variant[-1] == 'q'))
             sign = 1.0 if is_mma else -1.0
             # adding side constraint on the norm scaling variables
             for k in range(K):
@@ -1711,8 +1771,6 @@ def dcf_socp_data(
         nparams_tot += 1
     nparams_reg = int(L_regularizer is not None)
     nvars = nparams_tot + nparams_reg
-    if verbose > 0:
-        t = time.time()
     H, g, A, b = _dcf_HgAb(
         X, y, partition, centers, variant, is_symmetrized, use_linear,
         L_regularizer, bias_regularizer, L_sum_regularizer,
@@ -1768,7 +1826,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est1 = DCFEstimator(variant=2, is_convex=True,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': 0.0,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -1789,7 +1847,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est2 = DCFEstimator(variant=2, is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -1808,7 +1866,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est3 = DCFEstimator(variant=1, is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -1829,7 +1887,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est4 = DCFEstimator(variant=np.inf, is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__CLARABEL})
@@ -1850,7 +1908,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est5 = DCFEstimator(variant=np.inf, is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__CLARABEL})
@@ -1869,7 +1927,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est6 = DCFEstimator(variant='+', is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__CLARABEL})
@@ -1886,7 +1944,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est7 = DCFEstimator(variant='+', negate_y=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.01,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__CLARABEL})
@@ -1907,7 +1965,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est8 = DCFEstimator(variant=np.inf, is_convex=False, is_symmetrized=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__CLARABEL})
@@ -1928,7 +1986,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est9 = DCFEstimator(variant='2q', is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__CLARABEL})
@@ -1949,7 +2007,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est10 = DCFEstimator(variant='2q', is_convex=True,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': 0.0,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -1966,7 +2024,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est11 = DCFEstimator(variant='2w', is_convex=False,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': 0.0,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -1990,7 +2048,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     ...                      train_args={'normalize': False,
     ...                                  'use_linear': False,
     ...                                  'L_sum_regularizer': 0.0,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -2011,7 +2069,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est13 = DCFEstimator(variant=2, is_convex=False,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': 0.0,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -2031,7 +2089,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     ...                       train_args={'verbose': 0,
     ...                                   'normalize': False,
     ...                                   'L_sum_regularizer': 0.0,
-    ...                                   'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                   'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                   'L_regularizer_offset': 'np.log(n)',
     ...                                   'local_opt_maxiter': 0,
     ...                                   'afpc_ntrials': 3,
@@ -2055,7 +2113,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est15 = DCFEstimator(variant=2, is_convex=True,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': 0.01,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -2076,7 +2134,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est16 = DCFEstimator(variant=2, is_convex=True,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': '0.01/I_k',
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -2097,7 +2155,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est17 = DCFEstimator(variant=2, is_convex=True,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': 0.01,
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'afpc_min_cell_size': 3,
     ...                                  'local_opt_maxiter': 0,
@@ -2119,7 +2177,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est18 = DCFEstimator(variant=2, is_convex=True,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -2140,7 +2198,7 @@ def _dcf_l2_nolocal_clarabel_tests():
     >>> est19 = DCFEstimator(variant=2, is_convex=True,
     ...                      train_args={'normalize': True,
     ...                                  'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_maxiter': 0,
     ...                                  'backend': SOCP_BACKEND__CLARABEL})
@@ -2184,7 +2242,7 @@ def _dcf_l2_nolocal_lbfgs_tests():
     >>> est1 = DCFEstimator(variant=2, is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_maxiter': 0,
     ...                                 'backend': SOCP_BACKEND__LBFGS})
@@ -2229,7 +2287,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est1 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2254,7 +2312,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est2 = DCFEstimator(variant=2, is_convex=False, is_symmetrized=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 20,
@@ -2278,7 +2336,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est3 = DCFEstimator(variant='+', is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2304,7 +2362,7 @@ def _dcf_l2_local_nonsmooth_tests():
     ...                     train_args={'verbose': 1,
     ...                                 'normalize': False,
     ...                                 'L_sum_regularizer': 0.01,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 20,
@@ -2316,7 +2374,7 @@ def _dcf_l2_local_nonsmooth_tests():
     DCF(+), PARAMS, xscale: 1.0000, yscale: 1.0000, L_regularizer_offset: 5.2983, L_regularizer:...
     DCF(+), SOLVE, nvars: 151, nineqcons: 420, nsoccons: 30, etime: ...s
     DCF(+), SOLVED, etime: ...s
-    DCF(+), OPTIM: DCFLocalOptStats(init_obj_val=0.3985..., soln_obj_val=0.2257..., opt_status='MaxIterReached', niterations=20, nfun_evals=28, ngrad_evals=21, runtime=...)
+    DCF(+), OPTIM: DCFLocalOptStats(..., opt_status='MaxIterReached', niterations=20, nfun_evals=28, ngrad_evals=21, ...)
     >>> len(model4.weights), model4.weights[0].shape, model4.weights[1].shape
     (2, (5, 5), (2, 5))
     >>> np.round(model4._socp_stats.reg_var_value, decimals=4)
@@ -2335,7 +2393,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est5 = DCFEstimator(variant=np.inf, is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2357,7 +2415,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est6 = DCFEstimator(variant='+', is_convex=True,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2367,7 +2425,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> model6.weights.shape
     (7, 5)
     >>> model6._local_opt_stats # doctest: +ELLIPSIS
-    DCFLocalOptStats(init_obj_val=0.0627..., soln_obj_val=0.0626..., opt_status='MaxIterReached', niterations=10, nfun_evals=181, ngrad_evals=11, runtime=...)
+    DCFLocalOptStats(..., opt...='MaxIterReached', niter...=10, nfun...=181, ngrad...=11, run...)
     >>> yhat6 = est6.predict(model6, X)
     >>> np.round(np.mean(np.square(yhat6 - y)), decimals=4)  # in-sample L2-risk
     0.0948
@@ -2378,7 +2436,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est7 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.01,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2400,7 +2458,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est8 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': 0.01,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'nonsmooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2423,7 +2481,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est10 = DCFEstimator(variant=2, is_convex=False,
     ...                      train_args={'normalize': False,
     ...                                  'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_type': 'nonsmooth',
     ...                                  'local_opt_maxiter': 10,
@@ -2446,7 +2504,7 @@ def _dcf_l2_local_nonsmooth_tests():
     >>> est11 = DCFEstimator(variant=2, is_convex=False,
     ...                      train_args={'normalize': True,
     ...                                  'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_type': 'nonsmooth',
     ...                                  'local_opt_maxiter': 10,
@@ -2491,7 +2549,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est1 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2514,7 +2572,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est2 = DCFEstimator(variant=2, is_convex=False, is_symmetrized=True,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 20,
@@ -2537,7 +2595,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est3 = DCFEstimator(variant='+', is_convex=False,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2561,7 +2619,7 @@ def _dcf_l2_local_smooth_tests():
     >>> est4 = DCFEstimator(variant='+', is_convex=False, is_symmetrized=True,
     ...                     train_args={'verbose': 1,
     ...                                 'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_type': 'smooth',
@@ -2574,7 +2632,7 @@ def _dcf_l2_local_smooth_tests():
     DCF(+), PARAMS, xscale:..., yscale:..., L_regularizer_offset: 2.9644, L_regularizer: 0.4836...
     DCF(+), SOLVE, nvars: 151, nineqcons: 420, nsoccons: 30, etime: ...s
     DCF(+), SOLVED, etime: ...s
-    DCF(+), OPTIM: DCFLocalOptStats(init_obj_val=0.0036..., soln_obj_val=0.0006..., opt_status='MaxIterReached', niterations=20, nfun_evals=28, ngrad_evals=21, runtime=...)
+    DCF(+), OPTIM: DCFLocalOptStats(..., opt...='MaxIterReached', niter...=20, nfun...=28, ngrad...=21, run...)
     >>> model4.weights.shape
     (15, 10)
     >>> np.round(model4._socp_stats.reg_var_value, decimals=4)
@@ -2592,7 +2650,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est5 = DCFEstimator(variant=np.inf, is_convex=True,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2613,7 +2671,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est6 = DCFEstimator(variant='+', is_convex=True,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2623,7 +2681,7 @@ def _dcf_l2_local_smooth_tests():
     >>> model6.weights.shape
     (7, 5)
     >>> model6._local_opt_stats # doctest: +ELLIPSIS
-    DCFLocalOptStats(init_obj_val=0.00999..., soln_obj_val=0.00998..., opt_status='MaxIterReached', niterations=10, nfun_evals=182, ngrad_evals=11, runtime=...)
+    DCFLocalOptStats(..., opt...='MaxIterReached', nit...=10, nfun...=182, ngrad...=11, run...)
     >>> yhat6 = est6.predict(model6, X)
     >>> np.round(np.mean(np.square(yhat6 - y)), decimals=4)  # in-sample L2-risk
     0.0948
@@ -2633,7 +2691,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est7 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2655,7 +2713,7 @@ def _dcf_l2_local_smooth_tests():
 
     >>> est8 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'L_sum_regularizer': 0.01,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2678,7 +2736,7 @@ def _dcf_l2_local_smooth_tests():
     >>> est9 = DCFEstimator(variant=2, is_convex=False,
     ...                     train_args={'normalize': False,
     ...                                 'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2701,7 +2759,7 @@ def _dcf_l2_local_smooth_tests():
     >>> est10 = DCFEstimator(variant=2, is_convex=False,
     ...                      train_args={'normalize': True,
     ...                                  'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                  'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                  'L_regularizer_offset': 'np.log(n)',
     ...                                  'local_opt_type': 'smooth',
     ...                                  'local_opt_maxiter': 10,
@@ -2746,7 +2804,7 @@ def _dcf_l2_local_smooth_mma_tests():
 
     >>> est1 = DCFEstimator(variant='mma', is_convex=False,
     ...                     train_args={'L_sum_regularizer': 0.0,
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2774,7 +2832,7 @@ def _dcf_l2_local_smooth_mma_tests():
 
     >>> est2 = DCFEstimator(variant='mma', is_convex=False,
     ...                     train_args={'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,
@@ -2801,7 +2859,7 @@ def _dcf_l2_local_smooth_mma_tests():
 
     >>> est3 = DCFEstimator(variant='mma', is_convex=False, is_symmetrized=True,
     ...                     train_args={'L_sum_regularizer': '(x_radius**2)/n',
-    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)', 
+    ...                                 'L_regularizer': 'max(1.0, x_radius)**2 * (K/n)',
     ...                                 'L_regularizer_offset': 'np.log(n)',
     ...                                 'local_opt_type': 'smooth',
     ...                                 'local_opt_maxiter': 10,

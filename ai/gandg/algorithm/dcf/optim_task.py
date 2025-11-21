@@ -44,7 +44,6 @@ class SmoothDCFLocalOptimTask(OptimTask):
         return v, yhat
 
     def _cache(self, weights):
-        n = len(self.y)
         K, d = self.centers.shape
         self.cache_key = weights
         weights = weights.reshape((K, -1), copy=True)
@@ -134,7 +133,7 @@ class NonSmoothDCFLocalOptimTask(OptimTask):
         K = self.centers.shape[0]
         self.one2K = np.arange(K)
         self.cache_key = None
-    
+
     def _calc_maxk_yhat(self, weights, noise):
         from ai.gandg.algorithm.dcf.dcf import _dcf_calc_Xw
         Xw = _dcf_calc_Xw(self.phi, weights)
@@ -144,7 +143,6 @@ class NonSmoothDCFLocalOptimTask(OptimTask):
 
     def _cache(self, weights):
         noise = None
-        n = len(self.y)
         K, d = self.centers.shape
         self.cache_key = weights
         weights = weights.reshape((K, -1), copy=True)
@@ -328,7 +326,6 @@ class SmoothMaxMinAffineOptimTask(OptimTask):
         if self.L_sum_regularizer > 0.0:
             grad += _L_sum_reg_grad(weights, self.L_sum_regularizer, False, 1+d)
         return grad
-        
 
     def jac(self, weights):
         super().jac(weights)
@@ -374,7 +371,7 @@ def _L_sum_reg_grad(weights, L_sum_regularizer, is_symmetrized, nparams_pwf):
 def _calc_cvx_wsum(weights, d, is_convex, variant):
     wsum = None
     if is_convex:
-        if variant == '+': 
+        if variant == '+':
             d1 = d+1
             wsum = weights[:, 1:d1] + weights[:, d1:]
         else:
@@ -399,7 +396,7 @@ def _calc_D12sum(XW, Val, yhat, mu):
     # Calculating: D1 = np.exp((Val - yhat[None, :]) / mu)
     D1 = Val - yhat[None, :]
     D1 /= mu
-    np.exp(D1, out=D1)    
+    np.exp(D1, out=D1)
     # Calculating: D2 = np.exp((Val[:, None, :] - XW) / mu)
     D2 = Val[:, None, :] - XW
     D2 /= mu
@@ -476,7 +473,7 @@ def _test_smooth_optim_task():
     >>> len(cidx) == K
     True
     >>> centers = X[cidx, :]
-    
+
     >>> variant = '2'
     >>> sot1 = SmoothDCFLocalOptimTask(
     ...     centers=centers,
@@ -590,7 +587,7 @@ def _test_nonsmooth_optim_task():
     >>> P = rand_voronoi_partition(K, X)
     >>> cidx = find_min_dist_centers(X, P)
     >>> centers = X[cidx, :]
-    
+
     >>> variant = '2'
     >>> got1 = NonSmoothDCFLocalOptimTask(
     ...     centers=centers,
