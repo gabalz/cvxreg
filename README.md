@@ -9,7 +9,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 **Delta-Convex Fitting (DCF)** \
 `ai/gandg/algorithm/dcf/dcf.py`
 
-> Near-optimal delta-convex estimation of Lipschitz functions,
+> Near-optimal delta-convex estimation of Lipschitz functions, \
 > *Gabor Balazs,* \
 > arXiv, 2025
 ([paper](https://doi.org/10.48550/arXiv.2511.15615)).
