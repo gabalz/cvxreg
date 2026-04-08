@@ -106,7 +106,7 @@ All the doctests can be run by using the nose package:
 source .../pyenv/bin/activate  # if not done yet
 pip install pytest seaborn
 cd .../cvxreg  # go to the root directory of this project
-PYTHONPATH=. pytest --doctest-modules ai/
+PYTHONPATH=. pytest ai/gandg/cvxreg/test/
 ```
 
 ---------------------------------------------------------------------------------------------------

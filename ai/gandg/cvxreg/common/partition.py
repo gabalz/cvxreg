@@ -10,19 +10,6 @@ def find_closest_centers(data, centers, dist=squared_distance):
     :param centers: center matrix (each row hold the data of a center point)
     :param dist: distance function
     :return: tuple of closest center indices
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> data = np.array(
-    ...     [[1., 1.], [-1., 1.], [0., 1.],
-    ...      [-1.5, 0.5], [0.5, -1.], [1., 1.5],
-    ...      [-1., -1.], [-2., -1], [0., 1.]],
-    ... )
-    >>> centers = np.array(
-    ...     [[0., 1.], [-2., -1]]
-    ... )
-    >>> find_closest_centers(data, centers)
-    (0, 0, 0, 0, 0, 0, 1, 1, 0)
     """
     if dist in (euclidean_distance, squared_distance):
         _dist = 'sqeuclidean'
@@ -37,37 +24,6 @@ def find_min_dist_centers(data, partition, dist=squared_distance, op=np.max, bat
     :param partition: partition represented by sample indices (Partition object)
     :param dist: distance function
     :return: tuple of center indices
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> X = np.array(
-    ...     [[1., 1.], [-1., 1.], [0., 1.],
-    ...      [-1.5, 0.5], [0.5, -1.], [1., 1.5],
-    ...      [-1., -1.], [-2., -1], [0., 1.]],
-    ... )
-    >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
-    >>> centers = find_min_dist_centers(X, p)
-    >>> centers
-    (2, 6, 4)
-    >>> for k in range(p.ncells):
-    ...     cell = p.cells[k]
-    ...     print(squared_distance(X[cell, :], X[centers[k], :]))
-    [1.   1.   0.   2.5  1.25 0.  ]
-    [0. 1.]
-    [0.]
-
-    >>> X = np.array(
-    ...     [[1., 15.], [-5., 1.], [0., 30.],
-    ...      [-15, -1.5], [0.5, -1.], [-12., -1.5],
-    ...      [-1., -1.], [-1., -1], [0., 1.]],
-    ... )
-    >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
-    >>> centers = find_min_dist_centers(X, p, op=np.mean)
-    >>> centers
-    (1, 6, 4)
-    >>> centers = find_min_dist_centers(X, p, op=np.max)
-    >>> centers
-    (0, 6, 4)
     """
     if dist in (euclidean_distance, squared_distance):
         metric = 'sqeuclidean'
@@ -109,19 +65,6 @@ def cell_radii(data, partition, centers=None, dist=euclidean_distance):
     :param centers: centers (optional, computed if not provided)
     :param dist: distance function
     :return: cell radiuses
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> X = np.array(
-    ...     [[1., 1.], [-1., 1.], [0., 1.],
-    ...      [-1.5, 0.5], [0.5, -1.], [1., 1.5],
-    ...      [-1., -1.], [-2., -1], [0., 1.]],
-    ... )
-    >>> p = Partition(npoints=9, ncells=3, cells=([0, 1, 2, 3, 5, 8], [6, 7], [4]))
-    >>> cell_radii(X, p, dist=squared_distance)
-    (2.5, 1.0, 0.0)
-    >>> tuple(np.round(cell_radii(X, p), decimals=4))
-    (1.5811, 1.0, 0.0)
     """
     if centers is None:
         centers = data[find_min_dist_centers(data, partition, dist), :]
@@ -141,18 +84,6 @@ def voronoi_partition(centers, data, dist=squared_distance):
     :param data: data matrix (each row is a sample)
     :param dist: distance function
     :return: Partition object representing the Voronoi partition around the given centers
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> centers = np.array([[1., 0.], [-1., 0.]])
-    >>> data = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1]])
-    >>> partition = voronoi_partition(centers, data)
-    >>> partition.npoints
-    5
-    >>> partition.ncells
-    2
-    >>> sorted(partition.cells)
-    [[0, 2], [1, 3, 4]]
     """
     npoints = data.shape[0]
     ncells = centers.shape[0]
@@ -175,19 +106,6 @@ def rand_voronoi_partition(ncenters, data, dist=squared_distance):
     :param data: data matrix (each row is a sample)
     :param dist: distance function
     :return: Partition object representing the randomly created Voronoi partition
-
-    >>> np.set_printoptions(legacy='1.25')
-    >>> from ai.gandg.cvxreg.common.util import set_random_seed
-    >>> set_random_seed(19)
-
-    >>> data = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1], [0., 1.]])
-    >>> partition = rand_voronoi_partition(2, data)
-    >>> partition.npoints
-    6
-    >>> partition.ncells
-    2
-    >>> sorted(partition.cells)
-    [[0, 1, 2, 5], [3, 4]]
     """
     indices = np.random.permutation(data.shape[0])[:ncenters]
     centers = data[indices, :]
@@ -200,30 +118,6 @@ def max_affine_partition(data, maf):
     :param data: data matrix (each row is a sample)
     :param maf: max-affine function as a matrix (each row is an affine map [offset, slope])
     :returns: Partition object representing the induced partition
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> data = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1], [0., 1.]])
-    >>> maf = np.array([[1., 0.], [0., -1.], [-1., 1.]])
-    >>> p = max_affine_partition(data, maf)
-    >>> p.npoints
-    6
-    >>> p.ncells
-    3
-    >>> p.cells
-    (array([0]), array([3, 4]), array([1, 2, 5]))
-    >>> p.assert_consistency()
-    >>> p.cell_sizes()
-    (1, 2, 3)
-    >>> p.cell_indices()
-    array([0, 2, 2, 1, 1, 2])
-
-    >>> p == max_affine_partition(data, maf)
-    True
-    >>> p == singleton_partition(data.shape[0])
-    False
-    >>> p == Partition(npoints=6, ncells=3, cells=((3, 4), (1, 2, 5), (0,)))
-    True
     """
     nhyperplanes = maf.shape[0]
     idx = np.argmax(data.dot(maf.T), axis=1)
@@ -239,21 +133,6 @@ def singleton_partition(npoints):
 
     :param npoints: size of the partitioned set {0, 1, ..., npoints-1}
     :return: Partition object representing the singleton partition ([0], [1], ..., [npoints-1])
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> p = singleton_partition(5)
-    >>> p.npoints
-    5
-    >>> p.ncells
-    5
-    >>> p.cells
-    ([0], [1], [2], [3], [4])
-    >>> p.assert_consistency()
-    >>> p.cell_sizes()
-    (1, 1, 1, 1, 1)
-    >>> p.cell_indices()
-    array([0, 1, 2, 3, 4])
     """
     assert npoints >= 1
     return Partition(npoints=npoints, ncells=npoints, cells=tuple([[i] for i in range(npoints)]))
