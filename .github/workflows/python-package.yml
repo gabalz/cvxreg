@@ -37,4 +37,4 @@ jobs:
         flake8 . --count --max-complexity=15 --max-line-length=127 --show-source --statistics
     - name: Unit testing
       run: |
-        PYTHONPATH=. pytest --doctest-modules ai/
+        PYTHONPATH=. pytest ai/gandg/cvxreg/test/

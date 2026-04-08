@@ -132,3 +132,6 @@ dmypy.json
 _result_cache/
 _cache_data/
 
+# AI agents
+CLAUDE.md
+AGENTS.md

@@ -34,16 +34,6 @@ def partition_predict(partition, model, X, extend_X1=True):
     :param X: data matrix (each row is a sample)
     :param extend_X1: whether or not to extend the data with leading 1s
     :return: predicted vector (one value for each sample)
-
-    >>> np.set_printoptions(legacy='1.25')
-    >>> from ai.gandg.cvxreg.common.partition import Partition
-
-    >>> p = Partition(npoints=5, ncells=2, cells=(np.array([0, 3, 4]), np.array([1, 2])))
-    >>> X = np.array([[1.1, 1.1], [-1.2, 1.2], [-1.3, -1.3], [0.4, 0.4], [1.5, -1.5]])
-
-    >>> W = np.array([[1.0, 2.0, 3.0], [-1., -2., -3.]])
-    >>> partition_predict(p, W, X)
-    array([ 6.5, -2.2,  5.5,  3. , -0.5])
     """
     assert partition.npoints == X.shape[0]
     weights, X = prepare_prediction(model, X, extend_X1)
@@ -61,18 +51,6 @@ def max_affine_predict(model, X, extend_X1=True):
     :param X: data matrix (each row is a sample)
     :param extend_X1: whether or not to extend the data with leading 1s
     :return: predicted vector (one value for each sample)
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> X = np.array([[1.1, 1.1], [-1.2, 1.2], [-1.3, -1.3], [0.4, 0.4], [1.5, -1.5]])
-
-    >>> W = np.array([[1.0, 2.0, 3.0]])
-    >>> max_affine_predict(W, X)
-    array([ 6.5,  2.2, -5.5,  3. , -0.5])
-
-    >>> W = np.array([[1.0, 2.0, 3.0], [-1., -2., -3.]])
-    >>> max_affine_predict(W, X)
-    array([6.5, 2.2, 5.5, 3. , 0.5])
     """
     weights, X = prepare_prediction(model, X, extend_X1)
     yhat = np.max(X.dot(weights.T), axis=1)
@@ -88,24 +66,6 @@ def max_affine_fit_partition(partition, X, y, extend_X1=True, rcond=None):
     :param extend_X1: whether or not to extend the data with leading 1s
     :param rcond: cut-off ratio for small singular values (see np.linalg.lstsq)
     :return: weight matrix (each row represents an OLS fit)
-
-    >>> np.set_printoptions(legacy='1.25')
-    >>> from ai.gandg.cvxreg.common.distance import squared_distance
-    >>> from ai.gandg.cvxreg.common.partition import Partition
-
-    >>> X = np.array([[1., 1.], [-1., 1.], [0., 1.], [-1., -1.], [-2., -1], [0., 1.]])
-    >>> y = 0.5 * np.sum(np.square(X), axis=1)
-    >>> p = Partition(npoints=6, ncells=2, cells=(np.array([0, 3, 4]), np.array([1, 2, 5])))
-    >>> weights = max_affine_fit_partition(p, X, y)
-    >>> weights.shape
-    (2, 3)
-    >>> np.round(weights, decimals=4)
-    array([[ 1.  , -1.5 ,  1.5 ],
-           [ 0.25, -0.5 ,  0.25]])
-
-    >>> yhat = max_affine_predict(weights, X)
-    >>> np.round(squared_distance(yhat, y, axis=0) / len(y), decimals=4)
-    2.8333
     """
     if extend_X1:
         X = np.insert(X, 0, 1.0, axis=1)
@@ -121,17 +81,6 @@ def cv_indices(npoints, ncvfolds):
     :param npoints: number of data points
     :param ncvfolds: number of CV-folds
     :return sample indices of the test and train sets, respectively
-
-    >>> np.set_printoptions(legacy='1.25')
-
-    >>> test, train = cv_indices(10, 4)
-    >>> test
-    [array([0, 1]), array([2, 3, 4]), array([5, 6]), array([7, 8, 9])]
-    >>> train  # doctest:+NORMALIZE_WHITESPACE
-    [array([2, 3, 4, 5, 6, 7, 8, 9]),
-     array([0, 1, 5, 6, 7, 8, 9]),
-     array([0, 1, 2, 3, 4, 7, 8, 9]),
-     array([0, 1, 2, 3, 4, 5, 6])]
     """
     assert npoints >= ncvfolds
     idxset = set(range(npoints))

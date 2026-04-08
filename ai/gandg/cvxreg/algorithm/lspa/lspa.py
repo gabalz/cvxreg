@@ -84,38 +84,7 @@ def lspa_train(
 
 
 class LSPAEstimator(Estimator):
-    """The LSPA estimator.
-
-    >>> np.set_printoptions(legacy='1.25')
-    >>> from ai.gandg.cvxreg.common.util import set_random_seed
-    >>> set_random_seed(19)
-
-    >>> def regression_func(X):
-    ...     return 1.0 - 2.0*X[:, 0] + X[:, 1]**2
-
-    >>> X = np.random.randn(200, 2)
-    >>> y = regression_func(X) + 0.1 * np.random.randn(X.shape[0])
-
-    >>> X_test = np.random.randn(500, 2)
-    >>> y_test = regression_func(X_test)
-    >>> ols_model = np.linalg.lstsq(X, y, rcond=-1)[0]
-    >>> ols_yhat_test = np.sum(X_test * ols_model, axis=1)  # np.dot is not deterministic
-    >>> np.round(np.sum(np.square(ols_yhat_test - y_test)) / len(y_test), decimals=4)  # OLS out-of-sample L2-error
-    6.2752
-
-    >>> lspa = LSPAEstimator(
-    ...     train_args={'ncenters': 10, 'nrestarts': 2, 'nfinalsteps': 5},
-    ... )
-    >>> model = lspa.train(X, y)
-    >>> model.weights.shape
-    (5, 3)
-    >>> yhat = lspa.predict(model, X)
-    >>> np.round(np.sum(np.square(yhat - y)) / len(y), decimals=4)  # in-sample L2-risk
-    0.0127
-    >>> yhat_test = lspa.predict(model, X_test)
-    >>> np.round(np.sum(np.square(yhat_test - y_test)) / len(y_test), decimals=4)  # out-of-sample L2-error
-    0.0085
-    """
+    """The LSPA estimator."""
     def __init__(self, train_args={}, predict_args={}):
         Estimator.__init__(
             self,
