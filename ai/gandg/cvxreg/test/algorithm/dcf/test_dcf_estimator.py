@@ -62,7 +62,7 @@ class TestDCFEstimatorNoLocalClarabel(unittest.TestCase):
         cls.yhat6 = cls.est6.predict(cls.model6, cls.X)
         cls.yhat6_test = cls.est6.predict(cls.model6, cls.X_test)
 
-        ta7 = dict(ta, negate_y=None, L_sum_regularizer=0.01)
+        dict(ta, negate_y=None, L_sum_regularizer=0.01)
         cls.est7 = DCFEstimator(variant='+', negate_y=True, train_args={
             'normalize': False,
             'L_sum_regularizer': 0.01,
@@ -127,7 +127,7 @@ class TestDCFEstimatorNoLocalClarabel(unittest.TestCase):
         cls.yhat15_test = cls.est15.predict(cls.model15, cls.X_test)
 
         cls.est16 = DCFEstimator(variant=2, is_convex=True,
-                                  train_args=dict(ta, L_sum_regularizer='0.01/I_k'))
+                                 train_args=dict(ta, L_sum_regularizer='0.01/I_k'))
         cls.model16 = cls.est16.train(cls.X, cls.y, L_regularizer=0.0, L_regularizer_offset=0.0)
         cls.yhat16 = cls.est16.predict(cls.model16, cls.X)
         cls.yhat16_test = cls.est16.predict(cls.model16, cls.X_test)
@@ -139,7 +139,7 @@ class TestDCFEstimatorNoLocalClarabel(unittest.TestCase):
         cls.yhat17_test = cls.est17.predict(cls.model17, cls.X_test)
 
         cls.est18 = DCFEstimator(variant=2, is_convex=True,
-                                  train_args=dict(ta, L_sum_regularizer='(x_radius**2)/n'))
+                                 train_args=dict(ta, L_sum_regularizer='(x_radius**2)/n'))
         cls.model18 = cls.est18.train(cls.X, cls.y, L_regularizer=0.0, L_regularizer_offset=0.0)
         cls.yhat18 = cls.est18.predict(cls.model18, cls.X)
         cls.yhat18_test = cls.est18.predict(cls.model18, cls.X_test)
@@ -823,7 +823,7 @@ class TestDCFEstimatorLocalSmooth(unittest.TestCase):
         cls.yhat1_test = cls.est1.predict(cls.model1, cls.X_test)
 
         cls.est2 = DCFEstimator(variant=2, is_convex=False, is_symmetrized=True,
-                                 train_args=dict(ta_base, local_opt_maxiter=20))
+                                train_args=dict(ta_base, local_opt_maxiter=20))
         cls.model2 = cls.est2.train(cls.X, cls.y)
         cls.yhat2 = cls.est2.predict(cls.model2, cls.X)
         cls.yhat2_test = cls.est2.predict(cls.model2, cls.X_test)

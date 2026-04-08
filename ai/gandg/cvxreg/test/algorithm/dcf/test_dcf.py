@@ -297,7 +297,7 @@ class TestDcfPredict(unittest.TestCase):
     # model1: non-symmetric, convex DCF_2 (not dropping weights)
     def test_model1_predictions(self):
         expected = np.array([-2.3494, -0.6013, -0.4297, -1.0141, -1.5567,
-                              0.2401, -0.4761,  4.035, -1.0556,  0.4878])
+                             0.2401, -0.4761,  4.035, -1.0556,  0.4878])
         np.testing.assert_array_almost_equal(
             np.round(dcf_predict(self.model1, self.X), decimals=4), expected)
 
@@ -308,7 +308,7 @@ class TestDcfPredict(unittest.TestCase):
     # model2: non-symmetric, non-convex DCF_2 (not dropping weights)
     def test_model2_predictions(self):
         expected = np.array([-2.3494, -0.6013, -0.4297, -1.0141, -1.5567,
-                              0.2401, -0.4761,  4.035, -1.0556,  0.4878])
+                             0.2401, -0.4761,  4.035, -1.0556,  0.4878])
         np.testing.assert_array_almost_equal(
             np.round(dcf_predict(self.model2, self.X), decimals=4), expected)
 
@@ -319,7 +319,7 @@ class TestDcfPredict(unittest.TestCase):
     # model3: non-symmetric DCF_1 (not dropping weights)
     def test_model3_predictions(self):
         expected = np.array([-2.2187, -0.6013, -0.4297, -0.6724, -1.3059,
-                              0.8648, -0.4761,  5.3908, -0.1792,  1.0596])
+                             0.8648, -0.4761,  5.3908, -0.1792,  1.0596])
         np.testing.assert_array_almost_equal(
             np.round(dcf_predict(self.model3, self.X), decimals=4), expected)
 
@@ -344,7 +344,7 @@ class TestDcfPredict(unittest.TestCase):
     def test_model3i_vs_model3mma(self):
         yhat3i = dcf_predict(self.model3i, self.X)
         expected = np.array([-2.2208, -0.6013, -0.4297, -1.5529, -1.1635,
-                              -0.5079, -0.4761,  2.6081, -2.0862,  0.6363])
+                             -0.5079, -0.4761,  2.6081, -2.0862,  0.6363])
         np.testing.assert_array_almost_equal(np.round(yhat3i, decimals=4), expected)
         self.assertAlmostEqual(
             np.round(np.sum(np.abs(yhat3i - dcf_predict(self.model3mma, self.X))),
@@ -364,7 +364,7 @@ class TestDcfPredict(unittest.TestCase):
     # model4: non-symmetric DCF_inf (not dropping weights)
     def test_model4_predictions(self):
         expected = np.array([-2.2208, -0.6013, -0.4297, -1.1126, -1.1635,
-                              0.0113, -0.4761,  3.4604, -1.3121,  0.6363])
+                             0.0113, -0.4761,  3.4604, -1.3121,  0.6363])
         np.testing.assert_array_almost_equal(
             np.round(dcf_predict(self.model4, self.X), decimals=4), expected)
 
@@ -420,7 +420,7 @@ class TestDcfPredict(unittest.TestCase):
     def test_model6_predictions(self):
         yhat6 = dcf_predict(self.model6, self.X)
         expected = np.array([-2.3494, -0.6013, -0.4297, -1.0141, -1.5567,
-                              0.2401, -0.4761,  4.035, -1.0556,  0.4878])
+                             0.2401, -0.4761,  4.035, -1.0556,  0.4878])
         np.testing.assert_array_almost_equal(np.round(yhat6, decimals=4), expected)
 
     def test_model6_return_used_weights(self):
@@ -434,7 +434,7 @@ class TestDcfPredict(unittest.TestCase):
     # model7: non-symmetric DCF_+ (not dropping weights)
     def test_model7_predictions(self):
         expected = np.array([-1.7012, -0.6013, -0.4297, -0.993,  -1.8977,
-                              0.0994, -0.4761,  2.7581,  0.0151,  1.207])
+                             0.0994, -0.4761,  2.7581,  0.0151,  1.207])
         np.testing.assert_array_almost_equal(
             np.round(dcf_predict(self.model7, self.X), decimals=4), expected)
 
@@ -446,7 +446,7 @@ class TestDcfPredict(unittest.TestCase):
     def test_model8_predictions(self):
         yhat8 = dcf_predict(self.model8, self.X)
         expected = np.array([-1.7012, -0.6013, -0.4297, -0.993,  -1.8977,
-                              0.0994, -0.4761,  2.7581,  0.0151,  1.207])
+                             0.0994, -0.4761,  2.7581,  0.0151,  1.207])
         np.testing.assert_array_almost_equal(np.round(yhat8, decimals=4), expected)
 
     def test_model8_return_used_weights(self):
@@ -520,14 +520,14 @@ class TestDcfSocpData(unittest.TestCase):
     # --- case1 checks ---
     def test_case1_H(self):
         expected = np.array([
-            [0.333, 0.,    0.222, 0.,    0.,    0.,    0.,    0.,    0.   ],
-            [0.,    0.222, 0.,    0.,    0.,    0.,    0.,    0.,    0.   ],
-            [0.,    0.,    0.222, 0.,    0.,    0.,    0.,    0.,    0.   ],
-            [0.,    0.,    0.,    0.333, 0.,    0.222, 0.,    0.,    0.   ],
-            [0.,    0.,    0.,    0.,    0.222, 0.,    0.,    0.,    0.   ],
-            [0.,    0.,    0.,    0.,    0.,    0.222, 0.,    0.,    0.   ],
+            [0.333, 0.,    0.222, 0.,    0.,    0.,    0.,    0.,    0.],
+            [0.,    0.222, 0.,    0.,    0.,    0.,    0.,    0.,    0.],
+            [0.,    0.,    0.222, 0.,    0.,    0.,    0.,    0.,    0.],
+            [0.,    0.,    0.,    0.333, 0.,    0.222, 0.,    0.,    0.],
+            [0.,    0.,    0.,    0.,    0.222, 0.,    0.,    0.,    0.],
+            [0.,    0.,    0.,    0.,    0.,    0.222, 0.,    0.,    0.],
             [0.,    0.,    0.,    0.,    0.,    0.,    0.333, 0.,    0.222],
-            [0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.222, 0.   ],
+            [0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.222, 0.],
             [0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.222],
         ])
         np.testing.assert_array_almost_equal(
@@ -542,10 +542,10 @@ class TestDcfSocpData(unittest.TestCase):
         expected = np.array([
             [-1.,  0.,  0.,  1., -3.,  3.,  0.,  0.,  0.],
             [-1.,  0.,  0.,  0.,  0.,  0.,  1., -6.,  6.],
-            [ 1.,  3.,  3., -1.,  0.,  0.,  0.,  0.,  0.],
-            [ 0.,  0.,  0., -1.,  0.,  0.,  1., -3.,  3.],
-            [ 1.,  6.,  6.,  0.,  0.,  0., -1.,  0.,  0.],
-            [ 0.,  0.,  0.,  1.,  3.,  3., -1.,  0.,  0.],
+            [1.,  3.,  3., -1.,  0.,  0.,  0.,  0.,  0.],
+            [0.,  0.,  0., -1.,  0.,  0.,  1., -3.,  3.],
+            [1.,  6.,  6.,  0.,  0.,  0., -1.,  0.,  0.],
+            [0.,  0.,  0.,  1.,  3.,  3., -1.,  0.,  0.],
         ])
         np.testing.assert_array_almost_equal(
             np.round(self.A1.toarray(), decimals=3), expected, decimal=3)
@@ -589,8 +589,8 @@ class TestDcfSocpData(unittest.TestCase):
 
     def test_case2_g(self):
         expected = np.array([-0.22, -0.,   -0.,   -0.,   -0.24, -0.,   -0.,   -0.,   -0.26,
-                              -0.,   -0.,   -0.,   -0.08, -0.,   -0.,   -0.,   -0.1,  -0.,
-                              -0.,   -0.,    0.  ])
+                             -0.,   -0.,   -0.,   -0.08, -0.,   -0.,   -0.,   -0.1,  -0.,
+                             -0.,   -0.,    0.])
         np.testing.assert_array_almost_equal(self.g2, expected, decimal=6)
 
     def test_case2_A_shape(self):
@@ -604,31 +604,31 @@ class TestDcfSocpData(unittest.TestCase):
 
     def test_case2_A_first_rows(self):
         expected = np.array([
-            [-1.,  0.,  0.,  0.,  1.,  2.3,       -0.1,       2.30217289,  0.        ],
-            [-1.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         1.        ],
-            [-1.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
-            [-1.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
-            [ 1., -2.3,  0.1,  2.30217289, -1.,     0.,          0.,          0.,        0.        ],
-            [ 0.,  0.,  0.,  0., -1.,  0.,          0.,          0.,         1.        ],
-            [ 0.,  0.,  0.,  0., -1.,  0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0.,  0., -1.,  0.,          0.,          0.,         0.        ],
-            [ 1., -2.4, -2.4,  3.39411255,  0.,     0.,          0.,          0.,        -1.        ],
-            [ 0.,  0.,  0.,  0.,  1., -0.1,        -2.5,         2.5019992,  -1.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         -1.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         -1.        ],
-            [ 1., -0.7, -0.7,  0.98994949,  0.,     0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0.,  0.,  1.,  1.6,        -0.8,         1.78885438,  0.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         1.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
-            [ 1.,  0.4, -2.6,  2.63058929,  0.,     0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0.,  0.,  1.,  2.7,        -2.7,         3.81837662,  0.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         1.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0., -1.,  0.,  0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0., -1.,                  0.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
-            [ 0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.        ],
+            [-1.,  0.,  0.,  0.,  1.,  2.3,       -0.1,       2.30217289,  0.],
+            [-1.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         1.],
+            [-1.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
+            [-1.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
+            [1., -2.3,  0.1,  2.30217289, -1.,     0.,          0.,          0.,        0.],
+            [0.,  0.,  0.,  0., -1.,  0.,          0.,          0.,         1.],
+            [0.,  0.,  0.,  0., -1.,  0.,          0.,          0.,         0.],
+            [0.,  0.,  0.,  0., -1.,  0.,          0.,          0.,         0.],
+            [1., -2.4, -2.4,  3.39411255,  0.,     0.,          0.,          0.,        -1.],
+            [0.,  0.,  0.,  0.,  1., -0.1,        -2.5,         2.5019992,  -1.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         -1.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         -1.],
+            [1., -0.7, -0.7,  0.98994949,  0.,     0.,          0.,          0.,         0.],
+            [0.,  0.,  0.,  0.,  1.,  1.6,        -0.8,         1.78885438,  0.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         1.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
+            [1.,  0.4, -2.6,  2.63058929,  0.,     0.,          0.,          0.,         0.],
+            [0.,  0.,  0.,  0.,  1.,  2.7,        -2.7,         3.81837662,  0.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         1.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
+            [0.,  0.,  0., -1.,  0.,  0.,          0.,          0.,         0.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0., -1.,                  0.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
+            [0.,  0.,  0.,  0.,  0.,  0.,          0.,          0.,         0.],
         ])
         np.testing.assert_array_almost_equal(self.A2.toarray()[:25, :9], expected, decimal=6)
 

@@ -1,5 +1,4 @@
 import io
-import sys
 import unittest
 import unittest.mock
 import numpy as np

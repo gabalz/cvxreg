@@ -261,5 +261,3 @@ class SocpOptimTask(OptimTask):
                 v *= adj_mu * self.soc_viols[k]
                 grad += v
         return grad
-
-

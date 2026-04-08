@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 
 from ai.gandg.cvxreg.common.util import set_random_seed
-from ai.gandg.cvxreg.common.distance import euclidean_distance, squared_distance
+from ai.gandg.cvxreg.common.distance import squared_distance
 from ai.gandg.cvxreg.common.partition import (
     Partition, find_closest_centers, find_min_dist_centers,
     cell_radii, voronoi_partition, rand_voronoi_partition,
@@ -45,7 +45,7 @@ class TestFindMinDistCenters(unittest.TestCase):
     def test_mean_op(self):
         self.assertEqual(find_min_dist_centers(_DATA_X2, _P_9_3, op=np.mean), (1, 6, 4))
 
-    def test_max_op(self):
+    def test_max_op_x2(self):
         self.assertEqual(find_min_dist_centers(_DATA_X2, _P_9_3, op=np.max), (0, 6, 4))
 
 

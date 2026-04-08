@@ -167,5 +167,3 @@ def _calc_lbfgs_search_dir(p, grad, mem_pos, mem_size, gamma,
         if i >= max_memory:
             i = 0
     return p
-
-

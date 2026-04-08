@@ -124,5 +124,3 @@ def qp_solve(
         raise NotImplementedError('Not supported backend: {}'.format(backend))
 
     return QPResult(primal_soln, dual_soln, stat)
-
-
