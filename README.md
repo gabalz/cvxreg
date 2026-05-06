@@ -7,7 +7,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 # ALGORITHMS
 
 **Delta-Convex Fitting (DCF)** \
-`ai/gandg/algorithm/dcf/dcf.py`
+`cvxreg/algorithm/dcf/dcf.py`
 
 > Near-optimal delta-convex estimation of Lipschitz functions, \
 > *Gabor Balazs,* \
@@ -15,7 +15,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 ([paper](https://doi.org/10.48550/arXiv.2511.15615)).
 
 **Adaptively Partitioning Convex Nonparametric Least-Squares (APCNLS)** \
-`ai/gandg/algorithm/apcnls/apcnls.py`
+`cvxreg/algorithm/apcnls/apcnls.py`
 
 > Adaptively Partitioning Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs,* \
@@ -23,7 +23,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 ([paper](https://proceedings.mlr.press/v151/balazs22a.html)).
 
 **Adaptive Max-Affine Partitioning (AMAP)** \
-`ai/gandg/algorithm/amap/amap.py`
+`cvxreg/algorithm/amap/amap.py`
 
 > Convex Regression: Theory, Practice, and Applications, Section 6.2.3, \
 > *Gabor Balazs,* \
@@ -32,7 +32,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 [MATLAB code](https://gabalz.github.io/code/macsp2016-src.zip)).
 
 **Partitioning Convex Nonparametric Least-Squares (PCNLS) with uniformly random Voronoi partition** \
-`ai/gandg/algorithm/pcnls/pcnls_voronoi.py`
+`cvxreg/algorithm/pcnls/pcnls_voronoi.py`
 
 > Near-Optimal Max-Affine Estimators for Convex Regression, \
 > *Gabor Balazs, Andras Gyorgy, Csaba Szepesvari,* \
@@ -41,7 +41,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 [MATLAB code](http://proceedings.mlr.press/v38/balazs15-supp.zip)).
 
 **Convex Adaptive Partitioning (CAP), and FastCAP** \
-`ai/gandg/algorithm/cap/cap.py`
+`cvxreg/algorithm/cap/cap.py`
 
 > Multivariate Convex Regression with Adaptive Partitioning, \
 > *Lauren A. Hannah, David B. Dunson,* \
@@ -50,7 +50,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 [MATLAB code](https://github.com/laurenahannah/convex-function))
 
 **Least-Squares Partition Algorithm (LSPA)** \
-`ai/gandg/algorithm/lspa/lspa.py`
+`cvxreg/algorithm/lspa/lspa.py`
 
 > Convex Piecewise-Linear Fitting, \
 > *Alessandro Magnani, Stephen P. Boyd,* \
@@ -58,7 +58,7 @@ This Python library implements convex and delta-convex regression algorithms of 
 ([paper](https://web.stanford.edu/~boyd/papers/pdf/cvx_pwl_fit.pdf)).
 
 **Convex Nonparametric Least-Squares (CNLS)** \
-`ai/gandg/algorithm/cnls/cnls.py`
+`cvxreg/algorithm/cnls/cnls.py`
 
 > Convex Optimization, Section 6.5.5, \
 > *Stephen Boyd, Lieven Vandenberghe,* \
@@ -75,14 +75,13 @@ python3 -m venv .../pyenv  # creating empty virtual environment
 source .../pyenv/bin/activate  # activating the virtual environment
 
 pip install --upgrade pip
-pip install --upgrade setuptools
 
 cd .../cvxreg
 pip install -r requirements.txt  # recommended
 # or
 # for the latest package versions:
 # pip install numpy scipy osqp clarabel numba
-# pip install scikit-learn scikit-fda xgboost  # for ai/gandg/algorithms/external
+# pip install scikit-learn scikit-fda xgboost  # for cvxreg/algorithm/external
 
 # Jupyter notebook (optional):
 pip install joblib pandas widgetsnbextension jupyter matplotlib seaborn papermill
@@ -91,7 +90,7 @@ pip install joblib pandas widgetsnbextension jupyter matplotlib seaborn papermil
 ---------------------------------------------------------------------------------------------------
 # EXPERIMENTS
 
-There are the following Jupyter notebooks in `ai/gandg/notebooks/`:
+There are the following Jupyter notebooks in `cvxreg/notebooks/`:
 
 - `synthetic.ipynb`: experiments on synthetic regression problems;
 - `dataset.ipynb`: experiments on public datasets.
@@ -106,7 +105,7 @@ All the doctests can be run by using the nose package:
 source .../pyenv/bin/activate  # if not done yet
 pip install pytest seaborn
 cd .../cvxreg  # go to the root directory of this project
-PYTHONPATH=. pytest ai/gandg/cvxreg/test/
+PYTHONPATH=. pytest cvxreg/test/
 ```
 
 ---------------------------------------------------------------------------------------------------
