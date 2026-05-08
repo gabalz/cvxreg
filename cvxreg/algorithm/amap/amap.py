@@ -101,7 +101,7 @@ def _calc_amap(X, y, P, W, XW, ins_err, mincellsize, betaI):
 
     cell = P[best_k]
     P[best_k] = cell[best_i1]
-    P[k] = cell[best_i2]
+    P.append(cell[best_i2])
     W[:, best_k] = best_w1
     W = np.insert(W, K, best_w2, axis=1)
     XW[:, best_k] = best_Xw1
@@ -109,6 +109,7 @@ def _calc_amap(X, y, P, W, XW, ins_err, mincellsize, betaI):
     err = best_err
     K = K + 1
     assert W.shape[1] == K
+    assert len(P) == K
 
     while True:
         # Compute the induced partition.
